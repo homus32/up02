@@ -1,7 +1,25 @@
-# Anime Catalog — Architecture Design
+# AnimeBaza — Architecture Design
 
-> Designed by architect-brain for Team anime-concept-planning
-> Stack: Nuxt 4 + Vue 3 + TypeScript + PrimeVue 4 + Shikimori GraphQL API
+> **Утверждено Oracle-ревью (2026-05-21).** Ниже — итоговые решения после кросс-проверки архитектуры.
+
+**Стек:** Nuxt 4 + Vue 3 + TypeScript + PrimeVue 4 (Aura theme) + Shikimori REST API
+**Стили:** Vanilla CSS (БЭМ), CSS custom properties, PrimeVue Aura tokens
+
+## Архитектурные решения (ADR)
+
+| Решение | Выбор | Обоснование |
+|---------|-------|-------------|
+| API Shikimori | **GraphQL** | GraphQL endpoint https://shikimori.io/api/graphql доступен без OAuth для чтения публичных данных; REST для fallback |
+| Прокси | Nitro `server/api/anime/search.get.ts` + `[id].get.ts` | GraphQL POST к `shikimori.io/api/graphql`, кеширование (5min/1h), обработка 429, User-Agent |
+| Пагинация | **Paginator** (PrimeVue), не infinite scroll | DataView + Paginator работают из коробки; infinite scroll требует ручного IntersectionObserver |
+| localStorage | **VueUse `useStorage`** | SSR-safe, реактивная синхронизация, JSON-сериализация, межвкладочная |
+| Аутентификация | **localStorage** (не sessionStorage) | sessionStorage теряется при открытии новой вкладки |
+| Структура списков | `UserListItem` с name/posterUrl/status | Избавляет от N+1 запросов при отображении профиля |
+| Защита `/profile` | **Page-level middleware** (inline) | Только один защищённый роут — глобальный middleware избыточен |
+| SSR | `/profile` → `ssr: false`. Hover popup → `<ClientOnly>` | localStorage и OverlayPanel не SSR-safe |
+| Поиск | **URL params** (`?search=...`) | SSR-friendly, шаринг ссылок, навигация назад |
+| OverlayPanel | `<ClientOnly>` на десктопе, `<Dialog position="bottom">` на мобилках | Teleport + DOM манипуляции не работают на сервере |
+| PrimeVue кастомизация | **CSS custom properties** `--p-*` | Меньше кода, чем Pass Through; хватает для тёмной темы |
 
 ---
 
