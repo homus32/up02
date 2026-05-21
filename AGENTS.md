@@ -5,6 +5,22 @@
 Учебный проект — веб-приложение, разрабатываемое в рамках учебной практики УП.02.
 Стек: Nuxt 4 + Vue 3 + TypeScript + Vite, SSR, vanilla CSS (БЭМ).
 
+> ## **⚠️ АБСОЛЮТНОЕ ПРАВИЛО ПРОЕКТА: ДОКУМЕНТАЦИЯ В `docs/specs/` ДОЛЖНА БЫТЬ СИНХРОНИЗИРОВАНА ПОСЛЕ КАЖДОГО ИЗМЕНЕНИЯ КОДА**
+> 
+> **ЛЮБОЕ изменение кода — будь то рефакторинг, добавление фичи, исправление бага, переименование файла, изменение структуры папок, добавление/удаление компонента, изменение API, конфигурации или архитектуры — ОБЯЗЫВАЕТ немедленно обновить соответствующие файлы в `docs/specs/`.**
+> 
+> **ЭТО НЕРУШИМО. НЕ ОБСУЖДАЕТСЯ. НЕ ПРОПУСКАЕТСЯ.**
+> 
+> **Если ты не обновил `docs/specs/` — ты не закончил задачу. Точка.**
+> 
+> **Агенты, нарушившие это правило, будут считаться выполнившими работу НЕПОЛНОСТЬЮ.**
+> 
+> **Проверка перед завершением любой задачи:**
+> 1. Что изменилось в коде?
+> 2. Какой `.md` файл в `docs/specs/` описывает эту часть системы?
+> 3. Обновлён ли он? Перечитай его — не устарел ли?
+> 4. Если нет — ОБНОВИ. Прежде чем двигаться дальше.
+
 ## Стек
 
 - **Nuxt 4** (v4.4.6), Vue 3, Vue Router 5, TypeScript
@@ -21,8 +37,26 @@
 app/
   app.vue          # корневой компонент
   pages/           # страницы (file-based routing)
-  components/      # переиспользуемые Vue-компоненты
-  layouts/         # layout-компоненты (опционально)
+    index.vue      # каталог
+    login.vue      # вход
+    profile.vue    # профиль
+    anime/
+      [id].vue     # детальная страница тайтла
+  components/      # переиспользуемые Vue-компоненты (feature-based)
+    layout/        # Header.vue, Footer.vue
+    catalog/       # AnimeCard.vue, AnimePreviewPopup.vue, CatalogFilters.vue
+    anime/         # AnimeDetailHero.vue, AnimeDetailLists.vue, PlayerPlaceholder.vue
+    profile/       # ProfileCard.vue, AnimeProfileCard.vue, ProfileTabEmpty.vue
+    shared/        # ErrorState.vue, EmptyState.vue, SkeletonCatalogGrid.vue, SkeletonAnimeDetail.vue
+  composables/     # Vue composables
+    useAnimeApi.ts
+    useAuth.ts
+    useUserLists.ts
+    useHeaderSearch.ts
+    useCatalogSearchState.ts
+    useCatalogPagination.ts
+  types/           # TypeScript-типы
+    anime.ts
 public/            # статика (favicon и т.д.)
 docs/
   guides/          # руководства и справочные материалы

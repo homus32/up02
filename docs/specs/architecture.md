@@ -14,15 +14,21 @@
 app/
   app.vue          # корневой компонент
   pages/           # страницы
-  components/      # переиспользуемые компоненты
-    AnimeCard.vue
-    AnimeDetailHero.vue
-    AnimeDetailLists.vue
-    AnimePreviewPopup.vue
-    CatalogFilters.vue
-    PlayerPlaceholder.vue
-    ProfileCard.vue
-  layouts/         # layout-компоненты (опционально)
+  components/      # переиспользуемые компоненты (feature-based)
+    layout/        # Header.vue, Footer.vue
+    catalog/       # AnimeCard.vue, AnimePreviewPopup.vue, CatalogFilters.vue
+    anime/         # AnimeDetailHero.vue, AnimeDetailLists.vue, PlayerPlaceholder.vue
+    profile/       # ProfileCard.vue, AnimeProfileCard.vue, ProfileTabEmpty.vue
+    shared/        # ErrorState.vue, EmptyState.vue, SkeletonCatalogGrid.vue, SkeletonAnimeDetail.vue
+  composables/     # Vue composables
+    useAnimeApi.ts
+    useAuth.ts
+    useUserLists.ts
+    useHeaderSearch.ts
+    useCatalogSearchState.ts
+    useCatalogPagination.ts
+  types/
+    anime.ts
 server/
   api/anime/
     search.get.ts      # поиск/фильтрация аниме (GraphQL proxy)
@@ -54,4 +60,4 @@ docs/
 
 ---
 
-*Этот файл обновляется при изменении архитектуры.*
+*Последнее обновление: 2026-05-22 — обновлена структура проекта: компоненты разложены по feature-based папкам, добавлены 6 новых компонентов (Header, Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail) и 3 новых composable (useHeaderSearch, useCatalogSearchState, useCatalogPagination).*
