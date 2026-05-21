@@ -17,13 +17,17 @@ vi.mock('graphql-request', () => ({
   }),
 }))
 
-// Mock useRuntimeConfig (resolved from #app/nuxt by Nuxt auto-import transform)
+// Mock useRuntimeConfig (Nuxt auto-import, not available outside Nuxt env)
 vi.mock('#app/nuxt', () => ({
   useRuntimeConfig: vi.fn(function (): Record<string, unknown> {
     return {
       shikimori: { apiUrl: 'https://shikimori.one/api/graphql' },
     }
   }),
+}))
+
+vi.stubGlobal('useRuntimeConfig', () => ({
+  shikimori: { apiUrl: 'https://shikimori.one/api/graphql' },
 }))
 
 describe('handleShikimoriError', () => {
