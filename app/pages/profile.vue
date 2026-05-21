@@ -67,54 +67,16 @@ function handleRemove(animeId: string) {
             v-if="getByStatus(status).length > 0"
             class="profile-page__list"
           >
-            <div
+            <AnimeProfileCard
               v-for="[animeId, item] in getByStatus(status)"
               :key="animeId"
-              class="profile-page__card"
-            >
-              <NuxtLink
-                :to="`/anime/${animeId}`"
-                class="profile-page__card-link"
-              >
-                <img
-                  :src="item.posterUrl || '/placeholder-poster.svg'"
-                  :alt="item.russian || item.name"
-                  class="profile-page__card-poster"
-                />
-                <div class="profile-page__card-info">
-                  <span class="profile-page__card-name">{{ item.russian || item.name }}</span>
-                  <Tag
-                    :value="USER_LIST_LABELS[item.status as UserListStatus]"
-                    :class="`tag-${item.status}`"
-                    class="profile-page__card-status"
-                  />
-                  <span
-                    v-if="item.score > 0"
-                    class="profile-page__card-score"
-                  >
-                    <i class="pi pi-star" /> {{ item.score }}
-                  </span>
-                </div>
-              </NuxtLink>
-
-              <Button
-                icon="pi pi-trash"
-                severity="danger"
-                text
-                rounded
-                size="small"
-                @click="handleRemove(animeId)"
-              />
-            </div>
+              :anime-id="animeId"
+              :item="item"
+              @remove="handleRemove"
+            />
           </div>
 
-          <div v-else class="profile-page__empty">
-            <i class="pi pi-inbox profile-page__empty-icon" />
-            <p class="profile-page__empty-text">Nothing here yet</p>
-            <NuxtLink to="/" class="profile-page__empty-link">
-              Browse catalog
-            </NuxtLink>
-          </div>
+          <ProfileTabEmpty v-else />
         </TabPanel>
       </TabView>
     </div>
@@ -162,112 +124,6 @@ function handleRemove(animeId: string) {
   gap: var(--space-3);
 }
 
-.profile-page__card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-3);
-  transition: border-color var(--transition-fast);
-}
-
-.profile-page__card:hover {
-  border-color: var(--accent-cyan);
-}
-
-.profile-page__card-link {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: 1;
-  text-decoration: none;
-  color: inherit;
-  min-width: 0;
-}
-
-.profile-page__card-poster {
-  width: 60px;
-  height: 80px;
-  border-radius: var(--border-radius-md);
-  object-fit: cover;
-  background: var(--bg-elevated);
-  flex-shrink: 0;
-}
-
-.profile-page__card-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.profile-page__card-name {
-  font-size: var(--text-base);
-  font-weight: var(--font-medium);
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.profile-page__card-status {
-  font-size: var(--text-xs);
-  align-self: flex-start;
-}
-
-.profile-page__card-score {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--accent-amber);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-}
-
-.profile-page__card-score i {
-  font-size: var(--text-xs);
-}
-
-.profile-page__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-12) var(--space-6);
-  text-align: center;
-}
-
-.profile-page__empty-icon {
-  font-size: 3rem;
-  color: var(--text-muted);
-  margin-bottom: var(--space-4);
-}
-
-.profile-page__empty-text {
-  font-size: var(--text-lg);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-4);
-}
-
-.profile-page__empty-link {
-  color: var(--accent-cyan);
-  font-size: var(--text-sm);
-  text-decoration: none;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--accent-cyan);
-  border-radius: var(--border-radius-md);
-  transition: all var(--transition-fast);
-}
-
-.profile-page__empty-link:hover {
-  background: var(--accent-cyan);
-  color: var(--text-inverse);
-  text-decoration: none;
-}
-
 /* Mobile */
 @media (max-width: 768px) {
   .profile-page__header {
@@ -275,15 +131,6 @@ function handleRemove(animeId: string) {
     align-items: flex-start;
     gap: var(--space-4);
     padding: var(--space-6);
-  }
-
-  .profile-page__card {
-    padding: var(--space-2);
-  }
-
-  .profile-page__card-poster {
-    width: 50px;
-    height: 66px;
   }
 }
 
