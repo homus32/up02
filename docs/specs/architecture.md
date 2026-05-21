@@ -16,7 +16,18 @@ app/
   pages/           # страницы
   components/      # переиспользуемые компоненты
   layouts/         # layout-компоненты (опционально)
+server/
+  api/anime/
+    search.get.ts      # поиск/фильтрация аниме (GraphQL proxy)
+    [animeId].get.ts   # детальная страница тайтла (GraphQL proxy)
+  graphql/
+    queries.ts         # GraphQL-запросы (gql tag)
+  utils/
+    shikimori.ts       # GraphQL-клиент (graphql-request) + error handler
 public/            # статические файлы
+test/
+  server/          # E2E-тесты server routes (vitest + @nuxt/test-utils/e2e)
+  unit/            # unit-тесты (vitest)
 docs/
   guides/          # руководства
   specs/           # SDD-спецификации

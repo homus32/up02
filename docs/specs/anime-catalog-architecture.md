@@ -10,7 +10,13 @@
 | Решение | Выбор | Обоснование |
 |---------|-------|-------------|
 | API Shikimori | **GraphQL** | GraphQL endpoint https://shikimori.io/api/graphql доступен без OAuth для чтения публичных данных; REST для fallback |
-| Прокси | Nitro `server/api/anime/search.get.ts` + `[id].get.ts` | GraphQL POST к `shikimori.io/api/graphql`, кеширование (5min/1h), обработка 429, User-Agent |
+| Прокси | Nitro `server/api/anime/search.get.ts` + `[animeId].get.ts` | GraphQL POST к `shikimori.io/api/graphql`, кеширование (5min/1h), обработка 429, User-Agent |
+| GraphQL клиент | **graphql-request** | Вместо raw `$fetch` — `GraphQLClient` синглтон в `server/utils/shikimori.ts` с `gql`-тегом для запросов |
+| RuntimeConfig | **`shikimori.apiUrl`** | URL Shikimori вынесен в `runtimeConfig`, настраивается через `NUXT_SHIKIMORI_API_URL` |
+| User-Agent | **Константа в клиенте** | `'AnimeBaza/1.0 (educational project)'` живёт в конфигурации клиента |
+| Параметры роутов | **`[animeId]` вместо `[id]`** | Nuxt 4 convention — описательные имена параметров |
+| Тестирование server routes | **`@nuxt/test-utils/e2e` + локальный HTTP-сервер** | `setup({ server: true })` + мок-сервер на случайном порту для подмены Shikimori; отдельный `vitest.e2e.config.ts` (Node environment) для обхода [nuxt/test-utils#1690](https://github.com/nuxt/test-utils/issues/1690) |
+| Тестирование server utils | **vitest + `vi.mock`** | Unit-тесты мокают `#app/nuxt` (для `useRuntimeConfig`) и `graphql-request` |
 | Пагинация | **Paginator** (PrimeVue), не infinite scroll | DataView + Paginator работают из коробки; infinite scroll требует ручного IntersectionObserver |
 | localStorage | **VueUse `useStorage`** | SSR-safe, реактивная синхронизация, JSON-сериализация, межвкладочная |
 | Аутентификация | **localStorage** (не sessionStorage) | sessionStorage теряется при открытии новой вкладки |
@@ -204,44 +210,35 @@ app.vue (NuxtLayout)
 ```
 server/
   api/
-    graphql/
-      get.ts       # GET  /api/graphql?query=...&variables=...
-      post.ts      # POST /api/graphql  { query, variables }
-    animes/
-      [id].get.ts   # GET /api/animes/:id
-      search.get.ts # GET /api/animes/search?q=&kind=&genre=&status=&minScore=&maxScore=&season=&page=&limit=&order=
-    genres.get.ts   # GET /api/genres        — static genre list
-    seasons.get.ts  # GET /api/seasons       — available seasons
+    anime/
+      search.get.ts     # GET /api/anime/search?page=&limit=&order=&kind=&status=&season=&score=&search=
+      [animeId].get.ts  # GET /api/anime/:animeId
+  graphql/
+    queries.ts          # GraphQL-запросы (SEARCH_ANIMES, GET_ANIME_BY_ID) через gql tag
+  utils/
+    shikimori.ts        # useShikimoriClient() — GraphQLClient синглтон; handleShikimoriError() — 429/502
 ```
 
 ### Proxy rationale
-- Hides Shikimori API key from client
+- Hides Shikimori API configuration from client
 - Allows caching headers (Cache-Control)
-- Allows response trimming (remove unused fields)
-- Allows rate-limit handling (429 retry logic)
+- Allows rate-limit handling (429 → friendly error)
+- Shared GraphQL client via `graphql-request` вместо raw `$fetch`
 
 ### Route implementation outline
 
 ```
-server/api/graphql.get.ts:
-  1. Accept ?query, ?variables as query params
-  2. POST to https://shikimori.one/api/graphql
-  3. Forward with Authorization header from .env
-  4. Return { data, errors } → trim data
-  5. Set Cache-Control: public, max-age=300
-
-server/api/animes/[id].get.ts:
-  1. GET https://shikimori.one/api/animes/:id
-  2. Return trimmed anime detail with characters, related, screenshots
-
-server/api/animes/search.get.ts:
-  1. GET https://shikimori.one/api/animes?...
-  2. Map query params → api params
+server/api/anime/search.get.ts:
+  1. Parse query params (page, limit, order, kind, status, season, score, search)
+  2. Execute SEARCH_ANIMES query via useShikimoriClient()
   3. Return { data: Anime[], meta: { total, page, limit } }
+  4. Set Cache-Control: public, max-age=300
 
-server/api/genres.get.ts:
-  1. Return hardcoded genre list (shikimori genres are stable)
-  2. Cache: very long (1 week)
+server/api/anime/[animeId].get.ts:
+  1. Validate animeId (must be numeric)
+  2. Execute GET_ANIME_BY_ID query via useShikimoriClient()
+  3. Return anime detail or 404
+  4. Set Cache-Control: public, max-age=3600
 ```
 
 ---

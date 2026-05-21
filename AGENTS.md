@@ -97,3 +97,8 @@ docs/
 - ESLint — настроен, ошибки не пропускать.
 - Компоненты Vue — Composition API + `<script setup lang="ts">`.
 - Имена файлов: `PascalCase.vue` для компонентов, `kebab-case` для прочего.
+
+## Git
+
+- **Запрещено указывать соавтора (co-author) в коммитах.** Никаких `Co-authored-by:`.
+- Conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:` и т.д.

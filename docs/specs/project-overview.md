@@ -11,7 +11,10 @@
 - **Frontend:** Nuxt 4, Vue 3, TypeScript, Vite, SSR
 - **UI Library:** PrimeVue 4 (Aura theme)
 - **Styling:** Vanilla CSS, БЭМ (BEM), CSS custom properties
-- **API:** Shikimori GraphQL (`shikimori.io/api/graphql`), прокси через Nitro
+- **API:** Shikimori GraphQL (`shikimori.io/api/graphql`), прокси через Nitro (`graphql-request`)
+- **GraphQL Client:** `graphql-request` (v7), общий клиент в `server/utils/shikimori.ts`
+- **Runtime Config:** `shikimori.apiUrl` через `runtimeConfig` (`NUXT_SHIKIMORI_API_URL`)
+- **Testing:** Vitest + `@nuxt/test-utils` (E2E), `msw` (unit), `vitest` runner
 - **Storage:** localStorage (списки аниме, рейтинг, псевдо-авторизация)
 
 ## Задачи практики
