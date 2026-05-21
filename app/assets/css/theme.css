@@ -161,11 +161,62 @@
   --p-inputtext-focus-border-color: var(--accent-cyan);
 
   --p-selectbutton-background: var(--bg-surface);
-  --p-selectbutton-border-color: var(--border-color);
+  --p-selectbutton-border-color: transparent;
   --p-selectbutton-color: var(--text-secondary);
   --p-selectbutton-active-background: var(--accent-cyan);
   --p-selectbutton-active-color: var(--text-inverse);
 
+  --p-skeleton-background: var(--bg-card);
+  --p-rating-icon-color: var(--accent-amber);
+  --p-rating-icon-active-color: var(--accent-amber);
+}
+
+/* PrimeVue dark mode overrides (higher specificity to beat Aura .dark-mode defaults) */
+html.dark-mode {
+  --p-form-field-background: var(--bg-surface);
+  --p-form-field-focus-ring-background: var(--bg-surface);
+
+  --p-selectbutton-background: var(--bg-surface);
+  --p-selectbutton-border-color: transparent;
+  --p-selectbutton-color: var(--text-secondary);
+  --p-selectbutton-active-background: var(--accent-cyan);
+  --p-selectbutton-active-color: var(--text-inverse);
+  --p-selectbutton-hover-background: var(--bg-elevated);
+  --p-selectbutton-hover-color: var(--text-primary);
+
+  --p-inputtext-background: var(--bg-input);
+  --p-inputtext-border-color: var(--border-color);
+  --p-inputtext-color: var(--text-primary);
+  --p-inputtext-placeholder-color: var(--text-muted);
+  --p-inputtext-hover-border-color: var(--accent-cyan);
+  --p-inputtext-focus-border-color: var(--accent-cyan);
+
+  --p-dialog-background: var(--bg-card);
+  --p-dialog-border-color: var(--border-color);
+  --p-dialog-header-background: var(--bg-card);
+  --p-dialog-header-color: var(--text-primary);
+
+  --p-overlaypanel-background: var(--bg-elevated);
+  --p-overlaypanel-border-color: var(--border-color);
+  --p-overlaypanel-shadow: var(--shadow-lg);
+
+  --p-card-background: var(--bg-card);
+  --p-card-shadow: var(--shadow-md);
+
+  --p-tabview-tablist-background: transparent;
+  --p-tabview-tab-background: transparent;
+  --p-tabview-tab-color: var(--text-secondary);
+  --p-tabview-tab-active-color: var(--accent-cyan);
+  --p-tabview-tab-active-background: transparent;
+  --p-tabview-indicator-background: var(--accent-cyan);
+
+  --p-chip-background: var(--bg-elevated);
+  --p-chip-color: var(--text-secondary);
+
+  --p-dataview-background: transparent;
+  --p-dataview-border-color: transparent;
+
+  --p-tag-font-weight: var(--font-medium);
   --p-skeleton-background: var(--bg-card);
   --p-rating-icon-color: var(--accent-amber);
   --p-rating-icon-active-color: var(--accent-amber);

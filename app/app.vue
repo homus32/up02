@@ -1,25 +1,33 @@
 <script setup lang="ts">
+import { watchDebounced } from '@vueuse/core'
+
 const { isLoggedIn, username } = useAuth()
 const route = useRoute()
 const router = useRouter()
 
 const searchQuery = ref('')
-const isMobile = ref(false)
+
+watchDebounced(
+  searchQuery,
+  () => {
+    if (searchQuery.value.trim()) {
+      router.push({ path: '/', query: { search: searchQuery.value.trim() } })
+    } else {
+      router.push({ path: '/' })
+    }
+  },
+  { debounce: 500, maxWait: 1000 },
+)
 
 function onSearchSubmit() {
-  if (searchQuery.value.trim()) {
-    router.push({ path: '/', query: { search: searchQuery.value.trim() } })
-  }
+  router.push({ path: '/', query: searchQuery.value.trim() ? { search: searchQuery.value.trim() } : undefined })
 }
 
 onMounted(() => {
+  document.documentElement.classList.add('dark-mode')
   if (route.query.search) {
     searchQuery.value = route.query.search as string
   }
-  isMobile.value = window.innerWidth < 768
-  window.addEventListener('resize', () => {
-    isMobile.value = window.innerWidth < 768
-  })
 })
 </script>
 
@@ -55,13 +63,23 @@ onMounted(() => {
 
         <div class="header__search">
           <form @submit.prevent="onSearchSubmit" class="header__search-form">
-            <input
-              v-model="searchQuery"
-              type="search"
-              placeholder="Поиск аниме..."
-              class="header__search-input"
-              @input="onSearchSubmit"
-            />
+            <div class="header__search-wrapper">
+              <input
+                v-model="searchQuery"
+                type="search"
+                placeholder="Поиск аниме..."
+                class="header__search-input"
+              />
+              <button
+                v-if="searchQuery"
+                type="button"
+                class="header__search-clear"
+                @click="searchQuery = ''; onSearchSubmit()"
+                aria-label="Очистить поиск"
+              >
+                ×
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -153,6 +171,31 @@ onMounted(() => {
 
 .header__search-form {
   width: 100%;
+}
+
+.header__search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.header__search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: color var(--transition-fast);
+}
+
+.header__search-clear:hover {
+  color: var(--text-primary);
 }
 
 .header__search-input {

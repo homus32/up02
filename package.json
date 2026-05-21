@@ -16,6 +16,7 @@
     "@primeuix/themes": "^2.0.3",
     "@primevue/mcp": "^4.5.5",
     "@vueuse/core": "^14.3.0",
+    "@vueuse/nuxt": "^14.3.0",
     "graphql": "^16.14.0",
     "graphql-request": "^7.4.0",
     "nuxt": "^4.4.6",

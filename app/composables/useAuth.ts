@@ -5,7 +5,7 @@ import type { UserProfile } from '~/types/anime'
 const AUTH_KEY = 'anime_user'
 
 export function useAuth() {
-  const user = useStorage<UserProfile | null>(AUTH_KEY, null, localStorage, {
+  const user = useStorage<UserProfile | null>(AUTH_KEY, null, undefined, {
     serializer: StorageSerializers.object,
   })
 

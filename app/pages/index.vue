@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useDebounceFn } from '@vueuse/core'
 import type { Anime, SearchParams, UserListStatus } from '~/types/anime'
 import { USER_LIST_STATUSES, USER_LIST_LABELS } from '~/types/anime'
 
@@ -13,8 +12,14 @@ const selectedStatus = ref((route.query.status as string) || '')
 const selectedSeason = ref((route.query.season as string) || '')
 const selectedScore = ref(Number(route.query.score) || 0)
 const currentSort = ref((route.query.order as string) || 'ranked')
-const currentPage = ref(Number(route.query.page) || 1)
 const isMobile = ref(false)
+
+// === Load-more state ===
+const currentPage = ref(1)
+const loadingMore = ref(false)
+const additionalAnimes = ref<Anime[]>([])
+/** Tracks whether the last 'Load More' API call returned a full page (=== limit) */
+const _lastPageFull = ref(true)
 
 // ===== Filters =====
 const kindOptions = [
@@ -53,40 +58,49 @@ const seasonOptions = [
   { label: 'Осень 2024', value: 'autumn_2024' },
 ]
 
-// === Build search params from reactive state ===
-const searchParams = computed<SearchParams>(() => ({
+// === Build search params (without page — for initial fetch / filter changes) ===
+const baseParams = computed<SearchParams>(() => ({
   query: searchQuery.value || undefined,
   kind: (selectedKind.value as SearchParams['kind']) || undefined,
   status: (selectedStatus.value as SearchParams['status']) || undefined,
   season: selectedSeason.value || undefined,
   score: selectedScore.value || undefined,
   order: (currentSort.value as SearchParams['order']) || 'ranked',
-  page: currentPage.value,
   limit: 20,
 }))
 
-// === Data fetching ===
+// === Data fetching — initial / filter change (page 1, SSR) ===
 const { data, status, error, refresh } = useAsyncData<{ data: Anime[]; meta: { total: number; page: number; limit: number } }>(
   'catalog',
-  () => useAnimeApi().search(searchParams.value),
-  { watch: [searchParams] },
+  () => useAnimeApi().search({ ...baseParams.value, page: 1 }),
+  { watch: [baseParams] },
 )
 
-// === URL sync (debounced for search) ===
-const debouncedSearch = useDebounceFn((q: string) => {
-  router.replace({
-    query: {
-      ...route.query,
-      search: q || undefined,
-      page: undefined,
-    },
-  })
-  currentPage.value = 1
-}, 400)
+// Combine SSR data + Load More additions (SSR-safe: uses data?.data directly)
+const allAnimes = computed(() => [
+  ...(data.value?.data ?? []),
+  ...additionalAnimes.value,
+])
 
-function onSearchInput() {
-  debouncedSearch(searchQuery.value)
-}
+// hasMore — computed from data (initial) or last fetch result (after Load More)
+const hasMore = computed(() => {
+  if (currentPage.value > 1) {
+    return _lastPageFull.value
+  }
+  return (data.value?.data?.length ?? 0) >= 20
+})
+
+// Reset Load More state when filters/search change (data refetched)
+watch(data, () => {
+  additionalAnimes.value = []
+  currentPage.value = 1
+  // hasMore auto-re-evaluates from data.value?.data?.length
+})
+
+// Sync search query from URL changes (header search on same route)
+watch(() => route.query.search, (val) => {
+  searchQuery.value = (val as string) || ''
+})
 
 function updateUrl() {
   router.replace({
@@ -97,20 +111,29 @@ function updateUrl() {
       season: selectedSeason.value || undefined,
       score: selectedScore.value || undefined,
       order: currentSort.value || undefined,
-      page: currentPage.value > 1 ? String(currentPage.value) : undefined,
     },
   })
 }
 
-function onPageChange(event: { page: number }) {
-  currentPage.value = event.page + 1
+function onFilterChange() {
   updateUrl()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function onFilterChange() {
-  currentPage.value = 1
-  updateUrl()
+// === Load more (append next page to additionalAnimes) ===
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  try {
+    const nextPage = currentPage.value + 1
+    const result = await useAnimeApi().search({ ...baseParams.value, page: nextPage })
+    additionalAnimes.value = [...additionalAnimes.value, ...result.data]
+    _lastPageFull.value = result.data.length === 20
+    currentPage.value = nextPage
+  } catch {
+    // Silently fail — button still clickable for retry
+  } finally {
+    loadingMore.value = false
+  }
 }
 
 // === Anime kind label ===
@@ -227,7 +250,7 @@ onMounted(() => {
       </div>
 
       <!-- Loading -->
-      <div v-if="status === 'pending'" class="catalog-page__grid">
+      <div v-if="allAnimes.length === 0 && status === 'pending'" class="catalog-page__grid">
         <div v-for="n in 12" :key="n" class="skeleton-card">
           <div class="skeleton-card__poster" />
           <div class="skeleton-card__body">
@@ -248,7 +271,7 @@ onMounted(() => {
       </div>
 
       <!-- Empty -->
-      <div v-else-if="!data?.data?.length" class="catalog-page__state">
+      <div v-else-if="allAnimes.length === 0" class="catalog-page__state">
         <i class="pi pi-search catalog-page__state-icon" />
         <h2 class="catalog-page__state-title">Ничего не найдено</h2>
         <p class="catalog-page__state-text">Попробуйте изменить параметры поиска</p>
@@ -264,7 +287,7 @@ onMounted(() => {
       <template v-else>
         <div class="catalog-page__grid">
           <div
-            v-for="anime in data.data"
+            v-for="anime in allAnimes"
             :key="anime.id"
             class="catalog-page__card card"
             @mouseenter="showPopup($event, anime)"
@@ -337,13 +360,15 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Paginator -->
-        <div class="catalog-page__paginator">
-          <Paginator
-            :rows="20"
-            :total-records="data?.meta?.total || 0"
-            :page="currentPage - 1"
-            @page="onPageChange"
+        <!-- Load More -->
+        <div v-if="hasMore" class="catalog-page__load-more">
+          <Button
+            label="Загрузить ещё"
+            icon="pi pi-chevron-down"
+            severity="secondary"
+            outlined
+            :loading="loadingMore"
+            @click="loadMore"
           />
         </div>
       </template>
@@ -645,8 +670,8 @@ onMounted(() => {
   max-width: 400px;
 }
 
-/* Paginator */
-.catalog-page__paginator {
+/* Load More */
+.catalog-page__load-more {
   margin-top: var(--space-8);
   display: flex;
   justify-content: center;

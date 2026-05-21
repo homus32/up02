@@ -1,19 +1,18 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-// https://nuxt.com/docs/api/configuration/nuxt-config
+import Aura from '@primeuix/themes/aura'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@primevue/nuxt-module', 'nuxt-mcp-dev'],
+  modules: ['@primevue/nuxt-module', '@vueuse/nuxt', 'nuxt-mcp-dev'],
 
   css: ['~/assets/css/theme.css'],
 
   primevue: {
-    usePrimeVue: true,
-    autoImport: true,
     options: {
       theme: {
-        preset: 'aura',
+        preset: Aura,
         options: {
           darkModeSelector: '.dark-mode',
         },

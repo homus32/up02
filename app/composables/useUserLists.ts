@@ -7,8 +7,8 @@ const LISTS_KEY = 'anime_lists'
 const RATINGS_KEY = 'anime_ratings'
 
 export function useUserLists() {
-  const lists = useStorage<AnimeLists>(LISTS_KEY, {}, localStorage)
-  const ratings = useStorage<AnimeRatings>(RATINGS_KEY, {}, localStorage)
+  const lists = useStorage<AnimeLists>(LISTS_KEY, {})
+  const ratings = useStorage<AnimeRatings>(RATINGS_KEY, {})
 
   function addToList(animeId: string, item: UserListItem) {
     lists.value = { ...lists.value, [animeId]: item }

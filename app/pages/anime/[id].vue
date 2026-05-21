@@ -18,6 +18,11 @@ const userLists = useUserLists()
 const selectedStatus = ref<UserListStatus | null>(null)
 const userRating = ref(0)
 
+// Convert USER_LIST_STATUSES to label/value objects for SelectButton
+const statusOptions = computed(() =>
+  USER_LIST_STATUSES.map(s => ({ label: USER_LIST_LABELS[s], value: s }))
+)
+
 // Determine current list status on client
 const isInList = computed(() => userLists.isInList(animeId.value))
 const currentStatus = computed(() => userLists.getStatus(animeId.value))
@@ -269,16 +274,12 @@ const backLink = computed(() => {
             <div class="anime-page__list-selector">
               <SelectButton
                 v-model="selectedStatus"
-                :options="USER_LIST_STATUSES"
-                optionLabel=""
-                optionValue=""
+                :options="statusOptions"
+                optionLabel="label"
+                optionValue="value"
                 :allowEmpty="false"
                 :multiple="false"
-              >
-                <template #option="{ option }">
-                  {{ USER_LIST_LABELS[option] }}
-                </template>
-              </SelectButton>
+              />
             </div>
             <Button
               label="Добавить"
@@ -555,7 +556,6 @@ const backLink = computed(() => {
 .anime-page__list-selector :deep(.p-selectbutton) {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
 }
 
 .anime-page__list-actions {
