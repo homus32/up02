@@ -1,0 +1,339 @@
+/* AnimeBaza — Dark Theme "Anime Night Market"
+ * Color palette, design tokens, PrimeVue overrides
+ * Vanilla CSS + CSS custom properties (no Tailwind)
+ */
+
+:root {
+  /* === Base colors === */
+  --bg-page: #0f0f1a;
+  --bg-card: #1a1a2e;
+  --bg-elevated: #222240;
+  --bg-surface: #16162a;
+  --bg-input: #1e1e38;
+
+  /* === Text === */
+  --text-primary: #e8e8f0;
+  --text-secondary: #9898b8;
+  --text-muted: #686888;
+  --text-inverse: #0f0f1a;
+
+  /* === Accents === */
+  --accent-cyan: #00d4ff;
+  --accent-magenta: #ff2d78;
+  --accent-amber: #ffb347;
+
+  /* === Status colors (user lists) === */
+  --color-planned: #4a90d9;
+  --color-watching: #2ecc71;
+  --color-completed: #1abc9c;
+  --color-on_hold: #f39c12;
+  --color-dropped: #e74c3c;
+
+  /* === Semantic colors === */
+  --color-error: #e74c3c;
+  --color-success: #2ecc71;
+  --color-warning: #f39c12;
+  --color-info: #3498db;
+
+  /* === Borders === */
+  --border-color: #2a2a4a;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-cyan: 0 0 20px rgba(0, 212, 255, 0.15);
+
+  /* === Typography === */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* === Spacing === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* === Transitions === */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* === Layout === */
+  --header-height: 64px;
+  --max-width: 1280px;
+  --sidebar-width: 280px;
+
+  /* === PrimeVue Aura theme overrides === */
+  --p-primary-color: var(--accent-cyan);
+  --p-primary-contrast-color: var(--text-inverse);
+  --p-primary-hover-color: #33ddff;
+  --p-primary-active-color: #00b8e6;
+
+  --p-surface-0: var(--bg-elevated);
+  --p-surface-50: var(--bg-card);
+  --p-surface-100: var(--bg-surface);
+  --p-surface-200: #2a2a4a;
+  --p-surface-300: #3a3a5a;
+  --p-surface-400: #4a4a6a;
+  --p-surface-500: #686888;
+  --p-surface-600: #8888a8;
+  --p-surface-700: #a8a8c0;
+  --p-surface-800: #c8c8d8;
+  --p-surface-900: var(--text-primary);
+
+  --p-text-color: var(--text-primary);
+  --p-text-secondary-color: var(--text-secondary);
+  --p-border-radius: var(--border-radius-md);
+  --p-focus-ring-color: var(--accent-cyan);
+  --p-focus-ring-width: 2px;
+
+  --p-content-background: var(--bg-page);
+  --p-content-border-color: var(--border-color);
+
+  --p-card-background: var(--bg-card);
+  --p-card-shadow: var(--shadow-md);
+  --p-card-border-radius: var(--border-radius-lg);
+
+  --p-button-primary-background: var(--accent-cyan);
+  --p-button-primary-border-color: var(--accent-cyan);
+  --p-button-primary-color: var(--text-inverse);
+  --p-button-primary-hover-background: var(--accent-cyan);
+  --p-button-primary-hover-border-color: var(--accent-cyan);
+  --p-button-primary-hover-color: var(--text-inverse);
+  --p-button-border-radius: var(--border-radius-md);
+
+  --p-dataview-background: transparent;
+  --p-dataview-border-color: transparent;
+
+  --p-tabview-tablist-background: transparent;
+  --p-tabview-tab-background: transparent;
+  --p-tabview-tab-color: var(--text-secondary);
+  --p-tabview-tab-active-color: var(--accent-cyan);
+  --p-tabview-tab-active-background: transparent;
+  --p-tabview-indicator-background: var(--accent-cyan);
+
+  --p-tag-font-weight: var(--font-medium);
+  --p-chip-background: var(--bg-elevated);
+  --p-chip-color: var(--text-secondary);
+
+  --p-overlaypanel-background: var(--bg-elevated);
+  --p-overlaypanel-border-color: var(--border-color);
+  --p-overlaypanel-shadow: var(--shadow-lg);
+
+  --p-dialog-background: var(--bg-card);
+  --p-dialog-border-color: var(--border-color);
+  --p-dialog-header-background: var(--bg-card);
+  --p-dialog-header-color: var(--text-primary);
+
+  --p-inputtext-background: var(--bg-input);
+  --p-inputtext-border-color: var(--border-color);
+  --p-inputtext-color: var(--text-primary);
+  --p-inputtext-placeholder-color: var(--text-muted);
+  --p-inputtext-hover-border-color: var(--accent-cyan);
+  --p-inputtext-focus-border-color: var(--accent-cyan);
+
+  --p-selectbutton-background: var(--bg-surface);
+  --p-selectbutton-border-color: var(--border-color);
+  --p-selectbutton-color: var(--text-secondary);
+  --p-selectbutton-active-background: var(--accent-cyan);
+  --p-selectbutton-active-color: var(--text-inverse);
+
+  --p-skeleton-background: var(--bg-card);
+  --p-rating-icon-color: var(--accent-amber);
+  --p-rating-icon-active-color: var(--accent-amber);
+}
+
+/* === Global styles === */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* === Scrollbar === */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-page);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* === Focus visible === */
+
+:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+/* === Utility classes === */
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === Skeleton card placeholder === */
+
+.skeleton-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.skeleton-card__poster {
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-card__body {
+  padding: var(--space-3);
+}
+
+.skeleton-card__title {
+  height: 14px;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--border-radius-sm);
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-card__subtitle {
+  height: 12px;
+  width: 60%;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--border-radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* === Status badge colors (PrimeVue Tag overrides) === */
+
+.tag-planned {
+  background-color: var(--color-planned) !important;
+  color: white !important;
+}
+
+.tag-watching {
+  background-color: var(--color-watching) !important;
+  color: white !important;
+}
+
+.tag-completed {
+  background-color: var(--color-completed) !important;
+  color: white !important;
+}
+
+.tag-on_hold {
+  background-color: var(--color-on_hold) !important;
+  color: white !important;
+}
+
+.tag-dropped {
+  background-color: var(--color-dropped) !important;
+  color: white !important;
+}
