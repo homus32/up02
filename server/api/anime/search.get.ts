@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (season) variables.season = season
     if (score) variables.score = Number(score)
 
-    const data = await client.request<{ animes: unknown[] }>(SEARCH_ANIMES, variables)
+    const data = await client.request(SEARCH_ANIMES, variables)
     const animes = data?.animes ?? []
 
     setResponseHeader(event, 'Cache-Control', 'public, max-age=300')

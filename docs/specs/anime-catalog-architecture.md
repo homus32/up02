@@ -11,7 +11,8 @@
 |---------|-------|-------------|
 | API Shikimori | **GraphQL** | GraphQL endpoint https://shikimori.io/api/graphql доступен без OAuth для чтения публичных данных; REST для fallback |
 | Прокси | Nitro `server/api/anime/search.get.ts` + `[animeId].get.ts` | GraphQL POST к `shikimori.io/api/graphql`, кеширование (5min/1h), обработка 429, User-Agent |
-| GraphQL клиент | **graphql-request** | Вместо raw `$fetch` — `GraphQLClient` синглтон в `server/utils/shikimori.ts` с `gql`-тегом для запросов |
+| GraphQL клиент | **graphql-request** | Вместо raw `$fetch` — `GraphQLClient` синглтон в `server/utils/shikimori.ts` |
+| GraphQL query typing | **TypedDocumentNode** | `graphql-tag` + `@graphql-typed-document-node/core` — type-safe DocumentNode для запросов; схема в `graphql.config.ts` для IDE-валидации |
 | RuntimeConfig | **`shikimori.apiUrl`** | URL Shikimori вынесен в `runtimeConfig`, настраивается через `NUXT_SHIKIMORI_API_URL` |
 | User-Agent | **Константа в клиенте** | `'AnimeBaza/1.0 (educational project)'` живёт в конфигурации клиента |
 | Параметры роутов | **`[animeId]` вместо `[id]`** | Nuxt 4 convention — описательные имена параметров |
@@ -214,7 +215,7 @@ server/
       search.get.ts     # GET /api/anime/search?page=&limit=&order=&kind=&status=&season=&score=&search=
       [animeId].get.ts  # GET /api/anime/:animeId
   graphql/
-    queries.ts          # GraphQL-запросы (SEARCH_ANIMES, GET_ANIME_BY_ID) через gql tag
+    queries.ts          # GraphQL-запросы (SEARCH_ANIMES, GET_ANIME_BY_ID) через graphql-tag + TypedDocumentNode
   utils/
     shikimori.ts        # useShikimoriClient() — GraphQLClient синглтон; handleShikimoriError() — 429/502
 ```
@@ -641,11 +642,14 @@ On mount: `useAnimeSearch` reads from route query → fills reactive state → t
 
     "graphql": "^16.x",
     "graphql-request": "^7.x",
+    "graphql-tag": "^2.x",
 
     "@nuxtjs/html-validator": "^1.x"
   },
   "devDependencies": {
+    "@graphql-typed-document-node/core": "^3.x",
     "@nuxt/eslint": "^1.x",
+    "graphql-config": "^5.x",
     "typescript": "^5.x",
     "sass": "^1.x",
     "vitest": "^3.x",
@@ -662,6 +666,9 @@ On mount: `useAnimeSearch` reads from route query → fills reactive state → t
 | `primevue` + `@primevue/nuxt-module` | UI component library, auto-import in Nuxt |
 | `@primevue/themes` | Aura theme tokens, override via CSS vars |
 | `graphql-request` | Minimal GraphQL client for Shikimori proxy (server-side) |
+| `graphql-tag` | `gql` template tag → `DocumentNode` (IDE support, type-safe) |
+| `@graphql-typed-document-node/core` | `TypedDocumentNode` generic — связывает типы переменных и результата с запросом |
+| `graphql-config` | IDE-валидация и автокомплит GraphQL-запросов в WebStorm |
 | `sass` | SCSS for BEM component styles (vanilla CSS + SCSS nesting) |
 | `@nuxtjs/html-validator` | Validate rendered HTML for accessibility |
 | `@nuxt/eslint` | Linting — Nuxt-aware config |

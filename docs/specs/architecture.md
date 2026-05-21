@@ -34,9 +34,10 @@ server/
     search.get.ts      # поиск/фильтрация аниме (GraphQL proxy)
     [animeId].get.ts   # детальная страница тайтла (GraphQL proxy)
   graphql/
-    queries.ts         # GraphQL-запросы (gql tag)
+    queries.ts         # GraphQL-запросы (gql tag → graphql-tag, TypedDocumentNode)
   utils/
     shikimori.ts       # GraphQL-клиент (graphql-request) + error handler
+graphql.config.ts      # WebStorm IDE — автокомплит и валидация GraphQL-запросов
 public/            # статические файлы
 test/
   server/          # E2E-тесты server routes (vitest + @nuxt/test-utils/e2e)
@@ -61,3 +62,4 @@ docs/
 ---
 
 *Последнее обновление: 2026-05-22 — обновлена структура проекта: компоненты разложены по feature-based папкам, добавлены 6 новых компонентов (Header, Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail) и 3 новых composable (useHeaderSearch, useCatalogSearchState, useCatalogPagination).*
+*Последнее обновление: 2026-05-22 — GraphQL-запросы переведены на `graphql-tag` + `TypedDocumentNode` для type safety. Добавлен `graphql.config.ts` для WebStorm IDE.*

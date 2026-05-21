@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const client = useShikimoriClient()
-    const data = await client.request<{ animes: unknown[] }>(GET_ANIME_BY_ID, { ids: animeId })
+    const data = await client.request(GET_ANIME_BY_ID, { ids: animeId })
 
     const anime = data?.animes?.[0] ?? null
 

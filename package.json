@@ -20,6 +20,7 @@
     "dompurify": "^3.4.5",
     "graphql": "^16.14.0",
     "graphql-request": "^7.4.0",
+    "graphql-tag": "^2.12.6",
     "nuxt": "^4.4.6",
     "nuxt-mcp-dev": "^0.3.2",
     "primeicons": "^7.0.0",
@@ -31,6 +32,7 @@
     "@modelcontextprotocol/sdk": "1.25.2"
   },
   "devDependencies": {
+    "@graphql-typed-document-node/core": "^3.2.0",
     "@nuxt/test-utils": "^4.0.3",
     "@playwright/mcp": "^0.0.75",
     "@primevue/nuxt-module": "^4.5.5",
@@ -38,6 +40,7 @@
     "@vue/language-server": "^3.3.1",
     "@vue/test-utils": "^2.4.10",
     "@vue/typescript-plugin": "^3.3.1",
+    "graphql-config": "^5.1.6",
     "happy-dom": "^20.9.0",
     "msw": "^2.14.6",
     "vitest": "^4.1.7"

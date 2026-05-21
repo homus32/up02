@@ -13,6 +13,7 @@
 - **Styling:** Vanilla CSS, БЭМ (BEM), CSS custom properties
 - **API:** Shikimori GraphQL (`shikimori.io/api/graphql`), прокси через Nitro (`graphql-request`)
 - **GraphQL Client:** `graphql-request` (v7), общий клиент в `server/utils/shikimori.ts`
+- **GraphQL Query Builder:** `graphql-tag` (через `TypedDocumentNode` из `@graphql-typed-document-node/core`), IDE-валидация через `graphql-config`
 - **DOMPurify:** Санитизация HTML-описаний аниме (HI-5), динамический import только на клиенте
 - **Runtime Config:** `shikimori.apiUrl` через `runtimeConfig` (`NUXT_SHIKIMORI_API_URL`)
 - **Testing:** Vitest + `@nuxt/test-utils` (E2E), `msw` (unit), `vitest` runner
@@ -39,4 +40,4 @@
 
 ---
 
-*Последнее обновление: 2026-05-22*
+*Последнее обновление: 2026-05-22 — добавлены graphql-tag, @graphql-typed-document-node/core, graphql-config; TypedDocumentNode для type-safe GraphQL-запросов*
