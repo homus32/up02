@@ -13,6 +13,7 @@
 - **Styling:** Vanilla CSS, БЭМ (BEM), CSS custom properties
 - **API:** Shikimori GraphQL (`shikimori.io/api/graphql`), прокси через Nitro (`graphql-request`)
 - **GraphQL Client:** `graphql-request` (v7), общий клиент в `server/utils/shikimori.ts`
+- **DOMPurify:** Санитизация HTML-описаний аниме (HI-5), динамический import только на клиенте
 - **Runtime Config:** `shikimori.apiUrl` через `runtimeConfig` (`NUXT_SHIKIMORI_API_URL`)
 - **Testing:** Vitest + `@nuxt/test-utils` (E2E), `msw` (unit), `vitest` runner
 - **Storage:** localStorage (списки аниме, рейтинг, псевдо-авторизация)
@@ -29,6 +30,13 @@
 - [ ] Задание 2: use-case диаграмма в виде изображения
 - [x] Задание 3: 4 страницы, PrimeVue + БЭМ, адаптивность, клиентская логика (localStorage), ссылка на репозиторий
 
+## Рефакторинг (Фаза 1–2)
+
+- [x] Фаза 1 Critical (SSR, поиск, пагинация, UI-баги, PrimeVue тема) — выполнено
+- [x] Фаза 2 Декомпозиция (7 компонентов из 3 монолитных страниц)
+- [x] DOMPurify санитизация v-html
+- [x] Нет `as any`, нет утечек event listeners, типизированные функции
+
 ---
 
-*Последнее обновление: 2026-05-21*
+*Последнее обновление: 2026-05-22*

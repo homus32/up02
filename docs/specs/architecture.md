@@ -15,6 +15,13 @@ app/
   app.vue          # корневой компонент
   pages/           # страницы
   components/      # переиспользуемые компоненты
+    AnimeCard.vue
+    AnimeDetailHero.vue
+    AnimeDetailLists.vue
+    AnimePreviewPopup.vue
+    CatalogFilters.vue
+    PlayerPlaceholder.vue
+    ProfileCard.vue
   layouts/         # layout-компоненты (опционально)
 server/
   api/anime/

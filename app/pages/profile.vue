@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { USER_LIST_STATUSES, USER_LIST_LABELS } from '~/types/anime'
-import type { UserListStatus, UserListItem } from '~/types/anime'
+import type { UserListStatus } from '~/types/anime'
 
 definePageMeta({ ssr: false })
 
@@ -9,12 +9,11 @@ const { isLoggedIn, username, logout } = useAuth()
 const { getByStatus, removeFromList, getListStats } = useUserLists()
 
 onMounted(() => {
-  if (!isLoggedIn.value) {
-    router.replace('/login')
-  }
+  if (!isLoggedIn.value) router.replace('/login')
 })
 
 const stats = computed(() => getListStats())
+const totalAnime = computed(() => Object.values(stats.value).reduce<number>((a, b) => a + b, 0))
 
 function handleLogout() {
   logout()
@@ -24,52 +23,24 @@ function handleLogout() {
 function handleRemove(animeId: string) {
   removeFromList(animeId)
 }
-
-function getAnimeName(item: UserListItem): string {
-  return item.russian || item.name
-}
-
-function getStatusLabel(status: UserListStatus): string {
-  return USER_LIST_LABELS[status]
-}
 </script>
 
 <template>
   <div class="profile-page">
-    <div class="profile-page__header">
-      <div class="container">
-        <div class="profile-page__greeting">
-          <h1 class="profile-page__title">
-            Hello, {{ username }}!
-          </h1>
-          <Button
-            icon="pi pi-sign-out"
-            label="Выйти"
-            severity="secondary"
-            outlined
-            size="small"
-            @click="handleLogout"
-          />
-        </div>
-
-        <div class="profile-page__stats">
-          <div
-            v-for="status in USER_LIST_STATUSES"
-            :key="status"
-            class="profile-page__stat"
-          >
-            <span
-              class="profile-page__stat-badge"
-              :class="`tag-${status}`"
-            >
-              {{ getStatusLabel(status) }}
-            </span>
-            <span class="profile-page__stat-count">
-              {{ stats[status] }}
-            </span>
-          </div>
-        </div>
-      </div>
+    <div class="profile-page__header container">
+      <ProfileCard
+        :username="username || ''"
+        :total-anime="totalAnime"
+        :lists-count="stats"
+      />
+      <Button
+        icon="pi pi-sign-out"
+        label="Выйти"
+        severity="secondary"
+        outlined
+        size="small"
+        @click="handleLogout"
+      />
     </div>
 
     <div class="profile-page__content container">
@@ -78,11 +49,11 @@ function getStatusLabel(status: UserListStatus): string {
           v-for="status in USER_LIST_STATUSES"
           :key="status"
           :value="status"
-          :header="getStatusLabel(status)"
+          :header="USER_LIST_LABELS[status]"
         >
           <template #header>
             <span class="profile-page__tab-header">
-              <span class="profile-page__tab-label">{{ getStatusLabel(status) }}</span>
+              <span class="profile-page__tab-label">{{ USER_LIST_LABELS[status] }}</span>
               <span
                 v-if="stats[status] > 0"
                 class="profile-page__tab-count"
@@ -101,46 +72,37 @@ function getStatusLabel(status: UserListStatus): string {
               :key="animeId"
               class="profile-page__card"
             >
-              <div class="profile-page__card-poster">
+              <NuxtLink
+                :to="`/anime/${animeId}`"
+                class="profile-page__card-link"
+              >
                 <img
-                  v-if="item.posterUrl"
-                  :src="item.posterUrl"
-                  :alt="getAnimeName(item)"
-                  class="profile-page__card-image"
+                  :src="item.posterUrl || '/placeholder-poster.svg'"
+                  :alt="item.russian || item.name"
+                  class="profile-page__card-poster"
                 />
-                <div v-else class="profile-page__card-placeholder">
-                  <i class="pi pi-image" />
-                </div>
-              </div>
-
-              <div class="profile-page__card-info">
-                <NuxtLink
-                  :to="`/anime/${animeId}`"
-                  class="profile-page__card-name"
-                >
-                  {{ getAnimeName(item) }}
-                </NuxtLink>
-
-                <div class="profile-page__card-meta">
+                <div class="profile-page__card-info">
+                  <span class="profile-page__card-name">{{ item.russian || item.name }}</span>
                   <Tag
-                    :value="getStatusLabel(item.status)"
+                    :value="USER_LIST_LABELS[item.status as UserListStatus]"
                     :class="`tag-${item.status}`"
                     class="profile-page__card-status"
                   />
-
-                  <div v-if="item.score > 0" class="profile-page__card-rating">
-                    <i class="pi pi-star-fill" />
-                    <span>{{ item.score.toFixed(1) }}</span>
-                  </div>
+                  <span
+                    v-if="item.score > 0"
+                    class="profile-page__card-score"
+                  >
+                    <i class="pi pi-star" /> {{ item.score }}
+                  </span>
                 </div>
-              </div>
+              </NuxtLink>
 
               <Button
                 icon="pi pi-trash"
                 severity="danger"
                 text
                 rounded
-                class="profile-page__card-remove"
+                size="small"
                 @click="handleRemove(animeId)"
               />
             </div>
@@ -165,50 +127,10 @@ function getStatusLabel(status: UserListStatus): string {
 }
 
 .profile-page__header {
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  padding: var(--space-8) 0;
-}
-
-.profile-page__greeting {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-6);
-}
-
-.profile-page__title {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-}
-
-.profile-page__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-
-.profile-page__stat {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  background: var(--bg-elevated);
-  border-radius: var(--border-radius-md);
-  padding: var(--space-2) var(--space-3);
-}
-
-.profile-page__stat-badge {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--border-radius-sm);
-}
-
-.profile-page__stat-count {
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
+  padding: var(--space-8) var(--space-6);
 }
 
 .profile-page__content {
@@ -255,28 +177,23 @@ function getStatusLabel(status: UserListStatus): string {
   border-color: var(--accent-cyan);
 }
 
+.profile-page__card-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
 .profile-page__card-poster {
-  flex-shrink: 0;
   width: 60px;
   height: 80px;
   border-radius: var(--border-radius-md);
-  overflow: hidden;
-  background: var(--bg-elevated);
-}
-
-.profile-page__card-image {
-  width: 100%;
-  height: 100%;
   object-fit: cover;
-}
-
-.profile-page__card-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
 }
 
 .profile-page__card-info {
@@ -284,36 +201,24 @@ function getStatusLabel(status: UserListStatus): string {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .profile-page__card-name {
   font-size: var(--text-base);
   font-weight: var(--font-medium);
   color: var(--text-primary);
-  text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color var(--transition-fast);
-}
-
-.profile-page__card-name:hover {
-  color: var(--accent-cyan);
-  text-decoration: none;
-}
-
-.profile-page__card-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
 }
 
 .profile-page__card-status {
   font-size: var(--text-xs);
+  align-self: flex-start;
 }
 
-.profile-page__card-rating {
+.profile-page__card-score {
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -322,14 +227,8 @@ function getStatusLabel(status: UserListStatus): string {
   font-weight: var(--font-medium);
 }
 
-.profile-page__card-rating i {
+.profile-page__card-score i {
   font-size: var(--text-xs);
-}
-
-.profile-page__card-remove {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
 }
 
 .profile-page__empty {
@@ -372,25 +271,10 @@ function getStatusLabel(status: UserListStatus): string {
 /* Mobile */
 @media (max-width: 768px) {
   .profile-page__header {
-    padding: var(--space-6) 0;
-  }
-
-  .profile-page__greeting {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-4);
-  }
-
-  .profile-page__title {
-    font-size: var(--text-xl);
-  }
-
-  .profile-page__stats {
-    gap: var(--space-2);
-  }
-
-  .profile-page__stat {
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-6);
   }
 
   .profile-page__card {
