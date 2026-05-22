@@ -1,9 +1,3 @@
-<script setup lang="ts">
-onMounted(() => {
-  document.documentElement.classList.add('dark-mode')
-})
-</script>
-
 <template>
   <div class="layout">
     <Header />

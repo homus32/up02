@@ -1,5 +1,53 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
+
+const AnimeBazaPreset = definePreset(Aura, {
+  semantic: {
+    colorScheme: {
+      dark: {
+        primary: {
+          color: '{cyan.400}',
+          contrastColor: '#0f0f1a',
+          hoverColor: '{cyan.300}',
+          activeColor: '{cyan.200}',
+        },
+        formField: {
+          background: '#1e1e38',
+          borderColor: '#2a2a4a',
+          hoverBorderColor: '{primary.color}',
+          focusBorderColor: '{primary.color}',
+        },
+        content: {
+          background: '#0f0f1a',
+          borderColor: '#2a2a4a',
+        },
+      },
+    },
+  },
+  components: {
+    card: {
+      colorScheme: {
+        dark: {
+          root: {
+            background: '#1a1a2e',
+            borderRadius: '12px',
+          },
+        },
+      },
+    },
+    chip: {
+      colorScheme: {
+        dark: {
+          root: {
+            background: '#222240',
+            color: '#9898b8',
+          },
+        },
+      },
+    },
+  },
+})
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -13,10 +61,21 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/theme.css'],
 
+  app: {
+    head: {
+      script: [
+        {
+          innerHTML:
+            'document.documentElement.classList.add("dark-mode")',
+        },
+      ],
+    },
+  },
+
   primevue: {
     options: {
       theme: {
-        preset: Aura,
+        preset: AnimeBazaPreset,
         options: {
           darkModeSelector: '.dark-mode',
         },
