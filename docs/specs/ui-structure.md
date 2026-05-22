@@ -4,10 +4,10 @@
 
 | # | Страница | Маршрут | Назначение | Ключевые PrimeVue-компоненты |
 |---|----------|---------|------------|------------------------------|
-| 1 | **Каталог** | `/` | Сетка карточек аниме, поиск, фильтры (тип/статус/сезон/сорт.), кнопка «Загрузить ещё» | SelectButton, Select, Button, Tag, Chip, OverlayPanel, Dialog |
-| 2 | **Страница тайтла** | `/anime/[id]` | Постер, информация, плеер-заглушка, добавление в список, оценка | Tag, Rating, Chip, Button, SelectButton |
-| 3 | **Вход** | `/login` | Псевдо-форма логина (любое имя → профиль) | InputText, Button |
-| 4 | **Профиль** | `/profile` | Имя пользователя, 5 списков (planned/watching/completed/on_hold/dropped) с карточками, удаление | TabView, TabPanel, Button, Tag |
+| 1 | **Каталог** | `/` | Сетка карточек аниме, поиск, фильтры (тип/статус/сезон/сорт.), кнопка «Загрузить ещё» | PSelectButton, PSelect, PButton, PTag, PChip, POverlayPanel, PDialog |
+| 2 | **Страница тайтла** | `/anime/[id]` | Постер, информация, плеер-заглушка, добавление в список, оценка | PTag, PRating, PChip, PButton, PSelectButton, PImage |
+| 3 | **Вход** | `/login` | Псевдо-форма логина (любое имя → профиль) | PInputText, PButton |
+| 4 | **Профиль** | `/profile` | Имя пользователя, 5 списков (planned/watching/completed/on_hold/dropped) с карточками, удаление | PTabView, PTabPanel, PButton, PTag |
 
 ## Компоненты
 
@@ -62,6 +62,7 @@
 
 ---
 
-*Последнее обновление: 2026-05-22*
+*Последнее обновление: 2026-05-23*
 
 *Обновлено после рефакторинга: добавлены Header/Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail; обновлены пути компонентов (feature-based папки).*
+*Обновлено 2026-05-23: PrimeVue-компонентам добавлен префикс `P` (настройка `primevue.components.prefix` в `nuxt.config.ts`).*

@@ -53,7 +53,7 @@ async function handleLogin() {
           <label for="username" class="login-page__label">
             Имя пользователя
           </label>
-          <InputText
+          <PInputText
             id="username"
             v-model="usernameInput"
             type="text"
@@ -67,7 +67,7 @@ async function handleLogin() {
           </small>
         </div>
 
-        <Button
+        <PButton
           type="submit"
           label="Войти"
           class="login-page__button"

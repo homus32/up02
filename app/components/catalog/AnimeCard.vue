@@ -41,7 +41,7 @@ function statusLabel(status: string): string {
           class="anime-card__poster"
           loading="lazy"
         />
-        <Tag
+        <PTag
           :value="kindLabel(anime.kind)"
           class="anime-card__kind-badge"
           severity="secondary"
@@ -55,7 +55,7 @@ function statusLabel(status: string): string {
       </NuxtLink>
 
       <div class="anime-card__meta">
-        <Tag
+        <PTag
           v-if="anime.status"
           :value="statusLabel(anime.status)"
           :severity="statusSeverity(anime.status)"
@@ -69,12 +69,12 @@ function statusLabel(status: string): string {
       <ClientOnly>
         <div class="anime-card__actions">
           <div v-if="listStatus" class="anime-card__actions-inline">
-            <Tag
+            <PTag
               :value="USER_LIST_LABELS[listStatus]"
               :class="`tag-${listStatus}`"
               class="anime-card__list-badge"
             />
-            <Button
+            <PButton
               icon="pi pi-trash"
               severity="danger"
               text
@@ -83,7 +83,7 @@ function statusLabel(status: string): string {
               @click.stop="emit('remove-from-list')"
             />
           </div>
-          <Button
+          <PButton
             v-else
             label="В список"
             icon="pi pi-plus"

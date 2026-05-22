@@ -77,7 +77,7 @@ function getStatusTagClass(status: UserListStatus): string {
       <!-- Not in list: show selector + add button -->
       <template v-if="!_isInList">
         <div class="anime-detail-lists__selector">
-          <SelectButton
+          <PSelectButton
             v-model="selectedStatus"
             :options="statusOptions"
             optionLabel="label"
@@ -86,7 +86,7 @@ function getStatusTagClass(status: UserListStatus): string {
             :multiple="false"
           />
         </div>
-        <Button
+        <PButton
           label="Добавить"
           icon="pi pi-plus"
           :disabled="!selectedStatus"
@@ -97,14 +97,14 @@ function getStatusTagClass(status: UserListStatus): string {
       <!-- In list: show status badge + remove + rating -->
       <template v-else>
         <div class="anime-detail-lists__status">
-          <Tag
+          <PTag
             v-if="currentStatus"
             :value="USER_LIST_LABELS[currentStatus]"
             :class="getStatusTagClass(currentStatus)"
           />
         </div>
         <div class="anime-detail-lists__actions">
-          <Button
+          <PButton
             label="Удалить"
             icon="pi pi-trash"
             severity="danger"
@@ -114,7 +114,7 @@ function getStatusTagClass(status: UserListStatus): string {
         </div>
         <div class="anime-detail-lists__rating">
           <label class="anime-detail-lists__rating-label">Ваша оценка:</label>
-          <Rating
+          <PRating
             :modelValue="userRating / 2"
             :stars="5"
             :cancel="false"

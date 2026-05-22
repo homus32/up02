@@ -33,7 +33,7 @@ function handleRemove(animeId: string) {
         :total-anime="totalAnime"
         :lists-count="stats"
       />
-      <Button
+      <PButton
         icon="pi pi-sign-out"
         label="Выйти"
         severity="secondary"
@@ -44,8 +44,8 @@ function handleRemove(animeId: string) {
     </div>
 
     <div class="profile-page__content container">
-      <TabView>
-        <TabPanel
+      <PTabView>
+        <PTabPanel
           v-for="status in USER_LIST_STATUSES"
           :key="status"
           :value="status"
@@ -77,8 +77,8 @@ function handleRemove(animeId: string) {
           </div>
 
           <ProfileTabEmpty v-else />
-        </TabPanel>
-      </TabView>
+        </PTabPanel>
+      </PTabView>
     </div>
   </div>
 </template>

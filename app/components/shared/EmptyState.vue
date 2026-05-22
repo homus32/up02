@@ -16,7 +16,7 @@ defineEmits<{
     <i :class="icon" class="empty-state__icon" />
     <h2 class="empty-state__title">{{ title }}</h2>
     <p class="empty-state__message">{{ message }}</p>
-    <Button
+    <PButton
       v-if="actionLabel"
       :label="actionLabel"
       @click="$emit('action')"

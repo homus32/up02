@@ -81,7 +81,7 @@ const currentSort = computed({
   <div class="catalog-filters">
     <div class="catalog-filters__group">
       <label class="catalog-filters__label">Тип</label>
-      <SelectButton
+      <PSelectButton
         v-model="selectedKind"
         :options="kindOptions"
         option-label="label"
@@ -93,7 +93,7 @@ const currentSort = computed({
 
     <div class="catalog-filters__group">
       <label class="catalog-filters__label">Статус</label>
-      <SelectButton
+      <PSelectButton
         v-model="selectedStatus"
         :options="statusOptions"
         option-label="label"
@@ -105,7 +105,7 @@ const currentSort = computed({
 
     <div class="catalog-filters__group catalog-filters__group_small">
       <label class="catalog-filters__label">Сезон</label>
-      <Select
+      <PSelect
         v-model="selectedSeason"
         :options="seasonOptions"
         option-label="label"
@@ -116,7 +116,7 @@ const currentSort = computed({
 
     <div class="catalog-filters__group catalog-filters__group_small">
       <label class="catalog-filters__label">Сортировка</label>
-      <Select
+      <PSelect
         v-model="currentSort"
         :options="sortOptions"
         option-label="label"

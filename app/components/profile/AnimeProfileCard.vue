@@ -11,7 +11,7 @@
       />
       <div class="anime-profile-card__info">
         <span class="anime-profile-card__name">{{ item.russian || item.name }}</span>
-        <Tag
+        <PTag
           :value="USER_LIST_LABELS[item.status as UserListStatus]"
           :class="`tag-${item.status}`"
           class="anime-profile-card__status"
@@ -25,7 +25,7 @@
       </div>
     </NuxtLink>
 
-    <Button
+    <PButton
       icon="pi pi-trash"
       severity="danger"
       text

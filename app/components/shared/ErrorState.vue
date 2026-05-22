@@ -15,7 +15,7 @@ defineEmits<{
     <i class="pi pi-exclamation-triangle error-state__icon" />
     <h2 class="error-state__title">{{ title }}</h2>
     <p class="error-state__message">{{ message }}</p>
-    <Button
+    <PButton
       v-if="actionLabel"
       :label="actionLabel"
       icon="pi pi-refresh"

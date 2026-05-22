@@ -9,9 +9,9 @@
 ## Tech Stack
 
 - **Frontend:** Nuxt 4, Vue 3, TypeScript, Vite, SSR
-- **UI Library:** PrimeVue 4 (Aura theme)
+- **UI Library:** PrimeVue 4 (Aura theme), компоненты с префиксом `P` (`PButton`, `PInputText` и т.д.)
 - **Styling:** Vanilla CSS, БЭМ (BEM), CSS custom properties
-- **PrimeVue Theming:** Aura preset, кастомизированный через `definePreset` (`@primeuix/themes`)
+- **PrimeVue Theming:** Aura preset, кастомизированный через `definePreset` (`@primeuix/themes`); префикс компонентов `P` через `primevue.components.prefix`
 - **API:** Shikimori GraphQL (`shikimori.io/api/graphql`), прокси через Nitro (`graphql-request`)
 - **GraphQL Client:** `graphql-request` (v7), общий клиент в `server/utils/shikimori.ts`
 - **GraphQL Query Builder:** `graphql-tag` (через `TypedDocumentNode` из `@graphql-typed-document-node/core`), IDE-валидация через `graphql-config`
@@ -45,3 +45,4 @@
 *Последнее обновление: 2026-05-22 — добавлены graphql-tag, @graphql-typed-document-node/core, graphql-config; TypedDocumentNode для type-safe GraphQL-запросов*
 *Последнее обновление: 2026-05-22 — пакетный менеджер: npm → pnpm; Makefile и документация синхронизированы
 *Последнее обновление: 2026-05-22 — `--p-*` CSS-оверрайды заменены на `definePreset`, inline-скрипт для `.dark-mode` в `<head>`*
+*Последнее обновление: 2026-05-23 — PrimeVue-компонентам добавлен префикс `P` через `primevue.components.prefix`*

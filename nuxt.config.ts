@@ -73,6 +73,9 @@ export default defineNuxtConfig({
   },
 
   primevue: {
+    components: {
+      prefix: 'P',
+    },
     options: {
       theme: {
         preset: AnimeBazaPreset,

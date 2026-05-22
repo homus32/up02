@@ -58,7 +58,7 @@ defineExpose({ show })
 <template>
   <!-- Desktop OverlayPanel popup -->
   <ClientOnly>
-    <OverlayPanel
+    <POverlayPanel
       ref="overlayPanelRef"
       :breakpoints="{ '768px': '0px' }"
       class="anime-preview-popup__overlay"
@@ -83,7 +83,7 @@ defineExpose({ show })
             <span v-if="anime.duration" class="popup__meta-item">
               {{ anime.duration }} мин.
             </span>
-            <Tag
+            <PTag
               :value="kindLabel(anime.kind)"
               severity="secondary"
               class="popup__kind"
@@ -91,7 +91,7 @@ defineExpose({ show })
           </div>
 
           <div v-if="anime.genres?.length" class="popup__genres">
-            <Chip
+            <PChip
               v-for="genre in anime.genres.slice(0, 4)"
               :key="genre.id"
               :label="genre.russian || genre.name"
@@ -104,13 +104,13 @@ defineExpose({ show })
           </p>
 
           <div class="popup__actions">
-            <Button
+            <PButton
               :label="isInList ? 'В списке' : 'В список'"
               :icon="isInList ? 'pi pi-check' : 'pi pi-plus'"
               size="small"
               @click="emit('add-to-list', anime.id, 'planned')"
             />
-            <Button
+            <PButton
               label="Подробнее"
               icon="pi pi-arrow-right"
               size="small"
@@ -120,11 +120,11 @@ defineExpose({ show })
           </div>
         </div>
       </template>
-    </OverlayPanel>
+    </POverlayPanel>
   </ClientOnly>
 
   <!-- Mobile Dialog popup -->
-  <Dialog
+  <PDialog
     v-if="isMobile && anime"
     v-model:visible="dialogVisible"
     position="bottom"
@@ -150,7 +150,7 @@ defineExpose({ show })
           <span v-if="anime.episodes" class="popup__meta-item">
             {{ anime.episodesAired }}/{{ anime.episodes }} эп.
           </span>
-          <Tag
+          <PTag
             :value="kindLabel(anime.kind)"
             severity="secondary"
             class="popup__kind"
@@ -158,7 +158,7 @@ defineExpose({ show })
         </div>
 
         <div v-if="anime.genres?.length" class="popup__genres">
-          <Chip
+          <PChip
             v-for="genre in anime.genres.slice(0, 4)"
             :key="genre.id"
             :label="genre.russian || genre.name"
@@ -171,12 +171,12 @@ defineExpose({ show })
         </p>
 
         <div class="popup__actions">
-          <Button
+          <PButton
             :label="isInList ? 'В списке' : 'В список'"
             :icon="isInList ? 'pi pi-check' : 'pi pi-plus'"
             @click="emit('add-to-list', anime.id, 'planned')"
           />
-          <Button
+          <PButton
             label="Подробнее"
             icon="pi pi-arrow-right"
             severity="secondary"
@@ -185,7 +185,7 @@ defineExpose({ show })
         </div>
       </div>
     </template>
-  </Dialog>
+  </PDialog>
 </template>
 
 <style scoped>

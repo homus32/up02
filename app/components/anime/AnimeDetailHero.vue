@@ -83,7 +83,7 @@ onMounted(async () => {
     <div class="anime-detail-hero__content">
       <!-- Poster -->
       <div class="anime-detail-hero__poster">
-        <Image
+        <PImage
           :src="posterUrl"
           :alt="anime.russian || anime.name"
           preview
@@ -107,8 +107,8 @@ onMounted(async () => {
 
         <!-- Badges -->
         <div class="anime-detail-hero__badges">
-          <Tag :value="anime.kind.toUpperCase()" :severity="getKindSeverity(anime.kind)" />
-          <Tag
+          <PTag :value="anime.kind.toUpperCase()" :severity="getKindSeverity(anime.kind)" />
+          <PTag
             :value="anime.status === 'anons' ? 'Анонс' : anime.status === 'ongoing' ? 'Онгоинг' : 'Выпущено'"
             :severity="getStatusSeverity(anime.status)"
           />
@@ -116,7 +116,7 @@ onMounted(async () => {
 
         <!-- Score -->
         <div class="anime-detail-hero__score">
-          <Rating :modelValue="displayScore" :readonly="true" :stars="5" :cancel="false" />
+          <PRating :modelValue="displayScore" :readonly="true" :stars="5" :cancel="false" />
           <span class="anime-detail-hero__score-value">{{ anime.score || 'N/A' }}</span>
         </div>
 
@@ -144,7 +144,7 @@ onMounted(async () => {
 
         <!-- Genres -->
         <div v-if="anime.genres?.length" class="anime-detail-hero__genres">
-          <Chip v-for="genre in anime.genres" :key="genre.id" :label="genre.russian || genre.name" />
+          <PChip v-for="genre in anime.genres" :key="genre.id" :label="genre.russian || genre.name" />
         </div>
 
         <!-- Studio -->

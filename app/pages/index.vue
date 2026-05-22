@@ -95,7 +95,7 @@ function onPopupHide() { selectedAnime.value = null }
 
         <!-- Load More -->
         <div v-if="hasMore" class="catalog-page__load-more">
-          <Button
+          <PButton
             label="Загрузить ещё"
             icon="pi pi-chevron-down"
             severity="secondary"
