@@ -21,9 +21,6 @@ export default defineEventHandler(async (event) => {
 
     const data = await client.request(SEARCH_ANIMES, variables)
     const animes = data?.animes ?? []
-
-    setResponseHeader(event, 'Cache-Control', 'public, max-age=300')
-
     return {
       data: animes,
       meta: {

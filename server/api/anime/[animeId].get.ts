@@ -16,8 +16,6 @@ export default defineEventHandler(async (event) => {
     if (!anime) {
       throw createError({ statusCode: 404, statusMessage: `Anime #${animeId} not found` })
     }
-
-    setResponseHeader(event, 'Cache-Control', 'public, max-age=3600')
     return anime
   } catch (err) {
     handleShikimoriError(err)
