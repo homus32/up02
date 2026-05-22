@@ -1,75 +1,47 @@
-# Nuxt Minimal Starter
+# AnimeBaza — Учебная практика УП.02
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Веб-приложение-каталог аниме. Данные загружаются через Shikimori GraphQL API.
+Пользовательские списки — localStorage. Разрабатывается в рамках учебной практики УП.02.
 
-## Setup
+## Стек
 
-Make sure to install dependencies:
+- **Nuxt 4** + **Vue 3** + **TypeScript** + **Vite** (SSR)
+- **PrimeVue 4** (Aura theme)
+- **Vanilla CSS** — БЭМ (BEM), CSS custom properties
+- **GraphQL** — Shikimori API через Nitro proxy (`graphql-request`)
+- **pnpm** — пакетный менеджер
+
+## Быстрый старт
 
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+Открой http://localhost:3000.
 
-Build the application for production:
+## Команды
 
-```bash
-# npm
-npm run build
+| Команда | Назначение |
+|---------|-----------|
+| `pnpm dev` | Dev-сервер (http://localhost:3000) |
+| `pnpm build` | Production-сборка |
+| `pnpm generate` | Статическая генерация |
+| `pnpm preview` | Превью production-сборки |
+| `pnpm test` | Unit-тесты (Vitest) |
+| `pnpm test:e2e` | E2E-тесты |
+| `pnpm postinstall` | `nuxt prepare` (генерация .nuxt/) |
 
-# pnpm
-pnpm build
+## Структура проекта
 
-# yarn
-yarn build
-
-# bun
-bun run build
+```
+app/           # страницы, компоненты, composables
+server/        # Nitro API routes (GraphQL proxy)
+test/          # unit + E2E тесты
+docs/          # документация и SDD-спецификации
 ```
 
-Locally preview production build:
+## Документация
 
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+- `docs/specs/` — SDD-спецификации (архитектура, UI, use-cases)
+- `docs/guides/` — руководства (задания практики, CSS-методология)

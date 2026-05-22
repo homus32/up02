@@ -16,6 +16,7 @@
 - **GraphQL Query Builder:** `graphql-tag` (через `TypedDocumentNode` из `@graphql-typed-document-node/core`), IDE-валидация через `graphql-config`
 - **DOMPurify:** Санитизация HTML-описаний аниме (HI-5), динамический import только на клиенте
 - **Runtime Config:** `shikimori.apiUrl` через `runtimeConfig` (`NUXT_SHIKIMORI_API_URL`)
+- **Package Manager:** pnpm (см. `pnpm-lock.yaml`)
 - **Testing:** Vitest + `@nuxt/test-utils` (E2E), `msw` (unit), `vitest` runner
 - **Storage:** localStorage (списки аниме, рейтинг, псевдо-авторизация)
 
@@ -41,3 +42,4 @@
 ---
 
 *Последнее обновление: 2026-05-22 — добавлены graphql-tag, @graphql-typed-document-node/core, graphql-config; TypedDocumentNode для type-safe GraphQL-запросов*
+*Последнее обновление: 2026-05-22 — пакетный менеджер: npm → pnpm; Makefile и документация синхронизированы*

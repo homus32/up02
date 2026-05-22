@@ -114,11 +114,11 @@ docs/
 
 | Команда | Назначение |
 |---------|-----------|
-| `npm run dev` | Запуск dev-сервера (http://localhost:3000) |
-| `npm run build` | Production-сборка |
-| `npm run generate` | Статическая генерация |
-| `npm run preview` | Превью production-сборки |
-| `npm run postinstall` | `nuxt prepare` (генерация .nuxt/) |
+| `pnpm dev` | Запуск dev-сервера (http://localhost:3000) |
+| `pnpm build` | Production-сборка |
+| `pnpm generate` | Статическая генерация |
+| `pnpm preview` | Превью production-сборки |
+| `pnpm postinstall` | `nuxt prepare` (генерация .nuxt/) |
 
 ## Особенности Nuxt 4
 

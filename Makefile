@@ -1,34 +1,34 @@
-.PHONY: dev build preview generate test test-run postinstall clean
+.PHONY: dev build preview generate test test-run test-e2e postinstall clean
 
 # Development
 dev:
-	npm run dev
+	pnpm dev
 
 # Production build
 build:
-	npm run build
+	pnpm build
 
 # Preview production build
 preview:
-	npm run preview
+	pnpm preview
 
 # Static generation
 generate:
-	npm run generate
+	pnpm generate
 
 # Testing
 test:
-	npm run test
+	pnpm test
 
 test-run:
-	npm run test:run
+	pnpm test:run
 
 test-e2e:
-	npm run test:e2e
+	pnpm test:e2e
 
 # Post-install (generate .nuxt types)
 postinstall:
-	npm run postinstall
+	pnpm postinstall
 
 # Clean build artifacts
 clean:
