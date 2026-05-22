@@ -70,7 +70,7 @@
 
 **Severity:** CRITICAL
 
-**Status:** ❌ OPEN
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:**
 - `app/pages/anime/[id].vue:8` — `const { data: anime, status, error } = useAsyncData<Anime>(...)` — `refresh` отсутствует
@@ -79,28 +79,34 @@
 
 **Root Cause:** Ошибка копирования — при декомпозиции хиро-секции в `AnimeDetailHero.vue` переменная `refresh` была утеряна.
 
-**Fix:**
-```ts
-const { data: anime, status, error, refresh } = useAsyncData<Anime>(...)
-```
+**Fix Applied (2026-05-23):**
+1. `refresh` добавлен в деструктуризацию `useAsyncData`:
+   ```ts
+   const { data: anime, status, error, refresh } = useAsyncData<Anime>(...)
+   ```
+2. Создан регрессионный тест `test/unit/anime-detail-page.test.ts`, проверяющий наличие `refresh` в возвращаемом объекте
 
 ---
 
-### CI-5: Cache-Control test — regex не соответствует серверному значению
+### CI-5: Cache-Control — `setResponseHeader` не работает из-за Nitro route rule
 
 **Severity:** CRITICAL
 
-**Status:** ❌ OPEN
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:**
-- `test/server/anime-id.test.ts:82` — `expect(res.headers.get('Cache-Control')).toMatch(/max-age=300/)`
+- `server/api/anime/search.get.ts:25` — `setResponseHeader(event, 'Cache-Control', 'public, max-age=300')`
 - `server/api/anime/[animeId].get.ts:20` — `setResponseHeader(event, 'Cache-Control', 'public, max-age=3600')`
+- `nuxt.config.ts` — route rule `'/api/**': { cache: { maxAge: 60 * 5 } }`
 
-**Impact:** Тест проверяет `max-age=300`, а сервер реально отдаёт `max-age=3600`. Регулярное выражение `/max-age=300/` не совпадёт со строкой `"public, max-age=3600"`. Тест упадёт с `expected /max-age=300/ to match 'public, max-age=3600'`.
+**Impact:** Вызовы `setResponseHeader` для Cache-Control в server routes не имели эффекта. Nitro route rule `'/api/**': { cache: { maxAge: 60 * 5 } }` в `nuxt.config.ts` переопределяет заголовок Cache-Control на уровне роута — `setResponseHeader` применяется раньше и перезаписывается маршрутизатором. Фактически все API-эндпоинты (и поиск, и детальная страница) отдавали `max-age=300` независимо от вызовов в коде.
 
-**Root Cause:** Рассогласование между кодом серверного роута и тестом. Роут использует `max-age=3600` (1 час для детальной страницы), а тест ожидает `max-age=300` (5 минут — значение для поискового эндпоинта).
+**Root Cause:** `setResponseHeader` в Nitro server routes применяется до обработки route rules. Route rule `'/api/**': { cache: { maxAge: 60 * 5 } }` срабатывает после и перезаписывает заголовок. `setResponseHeader` в обоих роутах был мёртвым кодом.
 
-**Fix:** Синхронизировать — либо изменить тест на `/max-age=3600/`, либо сервер на `max-age=300`.
+**Fix Applied (2026-05-23):**
+1. Удалён `setResponseHeader(event, 'Cache-Control', 'public, max-age=300')` из `server/api/anime/search.get.ts`
+2. Удалён `setResponseHeader(event, 'Cache-Control', 'public, max-age=3600')` из `server/api/anime/[animeId].get.ts`
+3. Актуальное значение Cache-Control задаётся единой route rule `'/api/**': { cache: { maxAge: 60 * 5 } }` в `nuxt.config.ts`
 
 ### CI-2: Пагинация возвращает неверный `total` — всегда равен `animes.length`
 
@@ -913,8 +919,8 @@ const seasonOptions = computed(() => {
 4. ~~**CRITICAL** — Пагинация: Paginator → "Load more" кнопка (CI-2)~~ ✅ **Готово**
 5. ~~**HIGH** — SelectButton `optionLabel`/`optionValue` fix (HI-1)~~ ✅ **Готово**
 6. ~~**HIGH** — Добавить `.dark-mode` класс на `<html>` через inline-скрипт, кастомизация через `definePreset` (HI-3)~~ ✅ **Готово**
-7. **CRITICAL** — Исправить `refresh` в `useAsyncData` на `[id].vue` (CI-4)
-8. **CRITICAL** — Синхронизировать Cache-Control в тесте и серверном роуте (CI-5)
+7. ~~**CRITICAL** — Исправить `refresh` в `useAsyncData` на `[id].vue` (CI-4)~~ ✅ **Готово**
+8. ~~**CRITICAL** — Синхронизировать Cache-Control в тесте и серверном роуте (CI-5)~~ ✅ **Готово**
 
 **Phase 2 — Refactoring (декомпозиция монолитов):**
 5. **HIGH** — Вынести `AnimeCard.vue` из index.vue (HI-4 Phase 1)
