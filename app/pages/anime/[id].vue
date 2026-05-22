@@ -5,7 +5,7 @@ const route = useRoute()
 const animeId = computed(() => route.params.id as string)
 
 // Fetch anime data
-const { data: anime, status, error } = useAsyncData<Anime>(
+const { data: anime, status, error, refresh } = useAsyncData<Anime>(
   `anime-${animeId.value}`,
   () => useAnimeApi().getById(animeId.value),
 )
