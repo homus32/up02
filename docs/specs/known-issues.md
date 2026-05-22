@@ -1,6 +1,6 @@
 # Known Issues (AnimeBaza)
 
-> **Дата аудита:** 2026-05-21
+> **Дата аудита:** 2026-05-23
 > **Объём:** Все страницы, composables, server routes, конфигурация, типы
 > **Метод:** Полный code review + анализ архитектурных расхождений
 
@@ -37,30 +37,6 @@
 
 ---
 
-### CI-2: Пагинация возвращает неверный `total` — всегда равен `animes.length`
-
-**Severity:** CRITICAL
-
-**Status:** ✅ RESOLVED (2026-05-21)
-
-**Location:**
-- `server/api/anime/search.get.ts:30` — строка `total: animes.length`
-
-**Impact:** `Paginator` получает `total` = количеству элементов на текущей странице (например, 20), а не общему количеству результатов поиска. Пагинатор всегда показывает одну страницу, даже если в API тысячи совпадений. Пользователь не может перейти на вторую страницу — она "не существует" с точки зрения пагинатора.
-
-**Root Cause:** Shikimori GraphQL API возвращает только текущую страницу результатов без поля `totalCount` (или оно не запрашивается в query). Вместо использования настоящего total из API, код подставляет `animes.length`.
-
-**Fix Applied (2026-05-21):**
-1. Заменён `<Paginator>` на кнопку "Загрузить ещё" (инкрементальная загрузка)
-2. Добавлено состояние `allAnimes` для накопления результатов, `hasMore` (определяется по длине ответа API — если < limit, страниц больше нет), `loadingMore` для спиннера
-3. `useAsyncData` фетчит только page=1, отслеживает `baseParams` (без page)
-4. `loadMore()` инкрементит page, аппендится к `allAnimes`
-5. При смене фильтров — `watch(data)` сбрасывает всё к page=1
-
-**Не используется:** Shikimori GraphQL не поддерживает `totalCount`. Paginator заменён на Load More.
----
-
-
 ### CI-3: Поиск — два конкурирующих механизма, навигация на каждое нажатие клавиши
 
 **Severity:** CRITICAL
@@ -90,7 +66,64 @@
 7. Убран `page` из URL-параметров в `updateUrl()` — deep-link на страницу пагинации больше не поддерживается (замена на Load More)
 ---
 
+### CI-4: `pages/anime/[id].vue` — `refresh()` не деконструирован из `useAsyncData`
 
+**Severity:** CRITICAL
+
+**Status:** ❌ OPEN
+
+**Location:**
+- `app/pages/anime/[id].vue:8` — `const { data: anime, status, error } = useAsyncData<Anime>(...)` — `refresh` отсутствует
+
+**Impact:** На строке 25 вызывается `refresh()` в `@action="refresh()"` (кнопка «Повторить» в ErrorState), но `refresh` не деконструирован из `useAsyncData`. При клике на кнопку повтора — `TypeError: refresh is not a function`. Пользователь не может восстановиться после ошибки загрузки.
+
+**Root Cause:** Ошибка копирования — при декомпозиции хиро-секции в `AnimeDetailHero.vue` переменная `refresh` была утеряна.
+
+**Fix:**
+```ts
+const { data: anime, status, error, refresh } = useAsyncData<Anime>(...)
+```
+
+---
+
+### CI-5: Cache-Control test — regex не соответствует серверному значению
+
+**Severity:** CRITICAL
+
+**Status:** ❌ OPEN
+
+**Location:**
+- `test/server/anime-id.test.ts:82` — `expect(res.headers.get('Cache-Control')).toMatch(/max-age=300/)`
+- `server/api/anime/[animeId].get.ts:20` — `setResponseHeader(event, 'Cache-Control', 'public, max-age=3600')`
+
+**Impact:** Тест проверяет `max-age=300`, а сервер реально отдаёт `max-age=3600`. Регулярное выражение `/max-age=300/` не совпадёт со строкой `"public, max-age=3600"`. Тест упадёт с `expected /max-age=300/ to match 'public, max-age=3600'`.
+
+**Root Cause:** Рассогласование между кодом серверного роута и тестом. Роут использует `max-age=3600` (1 час для детальной страницы), а тест ожидает `max-age=300` (5 минут — значение для поискового эндпоинта).
+
+**Fix:** Синхронизировать — либо изменить тест на `/max-age=3600/`, либо сервер на `max-age=300`.
+
+### CI-2: Пагинация возвращает неверный `total` — всегда равен `animes.length`
+
+**Severity:** CRITICAL
+
+**Status:** ✅ RESOLVED (2026-05-21)
+
+**Location:**
+- `server/api/anime/search.get.ts:30` — строка `total: animes.length`
+
+**Impact:** `Paginator` получает `total` = количеству элементов на текущей странице (например, 20), а не общему количеству результатов поиска. Пагинатор всегда показывает одну страницу, даже если в API тысячи совпадений. Пользователь не может перейти на вторую страницу — она "не существует" с точки зрения пагинатора.
+
+**Root Cause:** Shikimori GraphQL API возвращает только текущую страницу результатов без поля `totalCount` (или оно не запрашивается в query). Вместо использования настоящего total из API, код подставляет `animes.length`.
+
+**Fix Applied (2026-05-21):**
+1. Заменён `<Paginator>` на кнопку "Загрузить ещё" (инкрементальная загрузка)
+2. Добавлено состояние `allAnimes` для накопления результатов, `hasMore` (определяется по длине ответа API — если < limit, страниц больше нет), `loadingMore` для спиннера
+3. `useAsyncData` фетчит только page=1, отслеживает `baseParams` (без page)
+4. `loadMore()` инкрементит page, аппендится к `allAnimes`
+5. При смене фильтров — `watch(data)` сбрасывает всё к page=1
+
+**Не используется:** Shikimori GraphQL не поддерживает `totalCount`. Paginator заменён на Load More.
+---
 
 ## High (сломанная функциональность — работает некорректно или не соответствует спецификации)
 
@@ -153,21 +186,24 @@
 
 **Severity:** HIGH
 
-**Status:** ✅ RESOLVED (2026-05-21)
+**Status:** ✅ RESOLVED (2026-05-22)
 
 **Location:**
-- `nuxt.config.ts:18` — `darkModeSelector: '.dark-mode'`
-- `app/assets/css/theme.css` — все токены заданы как тёмные (нет `:root` → `:root.dark-mode` переключения)
+- `nuxt.config.ts` — `darkModeSelector: '.dark-mode'`, `app.head.script` с inline-скриптом
+- `app/assets/css/theme.css` — все токены заданы как тёмные
 
 **Impact:** PrimeVue настроен ждать класс `.dark-mode` на `<html>` для активации тёмной темы, но этот класс нигде не добавляется. Поскольку CSS-токены уже тёмные, визуально выглядит нормально, но:
 - PrimeVue-компоненты могут рендериться в светлой теме (несоответствие с кастомными токенами)
 - Нет механизма переключения темы
 - Некоторые PrimeVue-компоненты имеют отдельные тёмные варианты стилей, которые не активируются
 
-**Root Cause:** Несоответствие между PrimeVue-конфигурацией (ждёт `.dark-mode`) и реальным DOM (класс не добавляется).
+**Root Cause:** Несоответствие между PrimeVue-конфигурацией (ждёт `.dark-mode`) и реальным DOM (класс не добавляется). Первая попытка (onMounted) давала flash светлой темы — класс добавлялся после первого paint.
 
-**Fix Applied (2026-05-21):**
-1. Добавлен `document.documentElement.classList.add('dark-mode')` в `onMounted` в `app.vue`
+**Fix Applied (2026-05-22):**
+1. Кастомизация Aura-темы перенесена из CSS `--p-*` оверрайдов в официальный API `definePreset` (`nuxt.config.ts`)
+2. Inline-скрипт `document.documentElement.classList.add("dark-mode")` добавлен через `app.head.script` — выполняется **до первого paint**, flash отсутствует
+3. Удалены мёртвые CSS-блоки (`html.dark-mode { }`, `--p-*` в `:root`)
+4. Удалён закомментированный `onMounted` из `app.vue`
 
 ---
 
@@ -277,14 +313,14 @@ const safeDescriptionHtml = computed(() => {
 1. Типографика — нет fluid-шкалы и иерархии заголовков
 2. Hover/focus/active состояния на кастомных элементах
 3. Микровзаимодействия (карточки, попап, кнопки)
-4. Кастомизация PrimeVue через Pass Through для уникального стиля
+4. Дальнейшая кастомизация через `definePreset` и Pass Through
 
 **Fix (после рефакторинга кода):**
 1. Настроить единую типографическую шкалу с `clamp()` для всех уровней (h1-h6, body, caption)
-2. Кастомизировать Button через Pass-Through: `font-weight: 600`, `letter-spacing: 0.01em`, правильный padding
+2. Кастомизировать Button через Pass-Through или `definePreset`: `font-weight: 600`, `letter-spacing: 0.01em`, правильный padding
 3. Добавить hover/active/focus состояния для всех интерактивных PrimeVue-компонентов
 4. Создать дизайн-систему: задокументировать цвета, типографику, отступы, компонентные стили
-5. Использовать PrimeVue Pass Through API для кастомизации компонентов, а не только CSS-переменные
+5. Продолжить кастомизацию через `definePreset` вместо CSS-переменных
 6. Адаптировать типографику под мобильные: `--text-sm` на мобильных должен быть не меньше 13px
 
 ---
@@ -317,7 +353,6 @@ const safeDescriptionHtml = computed(() => {
 4. Определить 3-4 breakpoint как CSS-переменные (можно через `@custom-media` или комментарии)
 5. Убрать глобальные теговые стили из theme.css, заменить на БЭМ-утилиты
 6. Создать `.btn` / `.button` БЭМ-миксин для согласованного вида кнопок вне PrimeVue
-7. Добавить `document.documentElement.classList.add('dark-mode')` в onMounted (см. HI-3)
 
 ---
 
@@ -366,6 +401,75 @@ const safeDescriptionHtml = computed(() => {
 1. Установить `@nuxt/fonts`: `pnpm add @nuxt/fonts` и добавить в modules
 2. Или добавить `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap')` в theme.css
 3. Или скачать Inter и использовать `@font-face` с `font-display: swap`
+
+---
+
+### HI-11: `SkeletonCatalogGrid.vue` — компонент не используется
+
+**Severity:** HIGH
+
+**Status:** ❌ OPEN
+
+**Location:**
+- `app/components/shared/SkeletonCatalogGrid.vue` — компонент определён
+- `app/pages/index.vue:55-61` — инлайн-скелетоны вместо компонента
+
+**Impact:** Компонент создан на этапе декомпозиции (HI-4), но не подключён ни в одной странице. `pages/index.vue` использует инлайн-разметку скелетонов (строки 55-61), которая дублирует логику `SkeletonCatalogGrid`. При изменении структуры карточки нужно править два места — компонент и инлайн-код.
+
+**Root Cause:** Компонент был создан в рамках декомпозиции, но `index.vue` не был обновлён для его использования.
+
+**Fix:** Заменить инлайн-скелетоны в `index.vue` на `<SkeletonCatalogGrid />`:
+```vue
+<SkeletonCatalogGrid v-if="status === 'pending'" />
+```
+
+---
+
+### HI-12: `EmptyState.vue` — проп `icon` не имеет значения по умолчанию
+
+**Severity:** HIGH
+
+**Status:** ❌ OPEN
+
+**Location:**
+- `app/components/shared/EmptyState.vue:16` — `:class="icon"` без дефолтного значения
+- `app/pages/index.vue:74-79` — вызов `<EmptyState />` без `icon`
+
+**Impact:** Шаблон рендерит `<i :class="icon" class="empty-state__icon" />`. При использовании без пропа `icon` (в `index.vue`), `<i>` рендерится с классом `empty-state__icon` но без класса иконки PrimeIcons. Иконка пустого состояния не отображается — пользователь видит пустой кружок.
+
+**Root Cause:** Проп `icon` опциональный (`string` | `undefined`), но в шаблоне нет fallback-значения. Компонент используется в `index.vue` без `icon` для состояния «ничего не найдено».
+
+**Fix:** Добавить значение по умолчанию в компоненте:
+```ts
+const props = withDefaults(defineProps<{
+  title?: string
+  description?: string
+  actionLabel?: string
+  icon?: string
+}>(), {
+  icon: 'pi pi-search',
+})
+```
+
+---
+
+### HI-13: `AnimePreviewPopup.vue` — SSR-небезопасный `window.innerWidth`
+
+**Severity:** HIGH
+
+**Status:** ❌ OPEN
+
+**Location:** `app/components/catalog/AnimePreviewPopup.vue:20-23`
+
+**Impact:** `onMounted(() => { isMobile.value = window.innerWidth < 768 })` — технически безопасно (onMounted работает только на клиенте в Nuxt), но между SSR-гидрацией и монтированием `isMobile` всегда `false`. Это вызывает визуальный флеш: на мобильных устройствах сначала отрисовывается десктопный OverlayPanel, который затем заменяется на Dialog.
+
+**Root Cause:** Прямой доступ к `window.innerWidth` без SSR-safe альтернативы. `useMediaQuery` из VueUse предоставляет реактивный SSR-safe вариант.
+
+**Fix:**
+```ts
+import { useMediaQuery } from '@vueuse/core'
+const isMobile = useMediaQuery('(max-width: 767px)')
+```
 
 ---
 
@@ -426,8 +530,11 @@ onUnmounted(() => {
 - `server/api/anime/[animeId].get.ts:12` — `client.request<{ animes: unknown[] }>`
 - `app/pages/anime/[id].vue:126` — `handleRatingChange(newRating)` имеет неявный `any`
 - Множественные `as string`, `as SearchParams['kind']` касты
+- `app/composables/useCatalogSearchState.ts:8-13` — все query-параметры кастятся через `as string`
+- `app/composables/useHeaderSearch.ts:30` — `route.query.search as string`
+- `app/pages/anime/[id].vue:5` — `route.params.id as string` (может быть `string[]`)
 
-**Impact:** Потеря type safety в критических местах — ошибки API, несоответствие типов не отлавливаются на этапе компиляции.
+**Impact:** Потеря type safety в критических местах — ошибки API, несоответствие типов не отлавливаются на этапе компиляции. `route.query.*` имеет тип `string | string[] | undefined`, ассершн `as string` скрывает эти варианты. Если URL содержит `?kind=tv&kind=movie`, `query.kind` станет массивом `['tv', 'movie']`, что приведёт к неожиданному поведению.
 
 **Fix:**
 1. Создать typed GraphQL response interface в `app/types/anime.ts`:
@@ -437,6 +544,7 @@ interface GraphQLAnimeResponse { animes: Anime[] }
 2. Заменить `unknown[]` на `Anime[]` в server routes
 3. Заменить `(error as any)` на использование `NuxtError` типа из `#app`
 4. Добавить явные типы для параметров функций
+5. Создать утилиту `useQueryParam(key, default)` для безопасного чтения query-параметров без ассершнов
 
 ---
 
@@ -577,6 +685,30 @@ const seasonOptions = computed(() => {
 
 ---
 
+### MI-13: `AnimeProfileCard.vue` — type assertion `item.status as UserListStatus`
+
+**Severity:** MEDIUM
+
+**Location:** `app/components/profile/AnimeProfileCard.vue:15` — `:value="USER_LIST_LABELS[item.status as UserListStatus]"`
+
+**Impact:** Ассершн `as UserListStatus` bypasses type safety. `item.status` из `UserListItem` уже типизирован как `UserListStatus`, но при доступе через индексацию объекта TypeScript не выводит это. Если в localStorage попадёт невалидный статус, ошибка проявится в рантайме.
+
+**Fix:** Убрать ассершн, если тип `UserListItem.status` уже корректен. Или использовать `Object.hasOwn(USER_LIST_LABELS, item.status)` для безопасной проверки.
+
+---
+
+### MI-14: Дублирование шаблона popup в `AnimePreviewPopup.vue` (Desktop/Mobile)
+
+**Severity:** MEDIUM
+
+**Location:** `app/components/catalog/AnimePreviewPopup.vue:58-188` — два идентичных блока содержимого popup для OverlayPanel и Dialog
+
+**Impact:** Desktop-OverlayPanel и Mobile-Dialog содержат одинаковое содержимое. При изменении структуры popup нужно править оба блока. Риск рассинхронизации.
+
+**Fix:** Вынести содержимое popup в отдельный sub-компонент `<PopupContent>` или использовать слот.
+
+---
+
 ## Low (косметика / полировка — не влияет на функциональность)
 
 ### LI-1: Скелетоны — захардкожено 12 карточек
@@ -677,11 +809,85 @@ const seasonOptions = computed(() => {
 
 ---
 
+### LI-9: `AnimeProfileCard.vue` — нарушен порядок template/script setup
+
+**Severity:** LOW
+
+**Location:** `app/components/profile/AnimeProfileCard.vue:1-51`
+
+**Impact:** Во всех компонентах проекта сначала идёт `<script setup lang="ts">`, затем `<template>`. В `AnimeProfileCard.vue` порядок обратный. Не влияет на функциональность, но нарушает принятую конвенцию.
+
+**Fix:** Переставить местами `<template>` и `<script setup>`.
+
+---
+
+### LI-10: `PlayerPlaceholder.vue` — пустой `<script setup lang="ts">`
+
+**Severity:** LOW
+
+**Location:** `app/components/anime/PlayerPlaceholder.vue:1-3`
+
+**Impact:** Пустой блок script setup без импортов, типов или логики. Никак не влияет на рантайм, но создаёт шум в коде.
+
+**Fix:** Удалить пустой `<script setup lang="ts">` (шаблон самодостаточен).
+
+---
+
+### LI-11: `app.vue` — отсутствует анимация `<NuxtPage />`
+
+**Severity:** LOW
+
+**Location:** `app/app.vue:5` — `<NuxtPage />` без обёртки в `<Transition>`
+
+**Impact:** Страницы переключаются мгновенно, без плавного перехода. Визуально feels like jank на навигации.
+
+**Fix:** Оборать `<NuxtPage />` в `<Transition name="page" mode="out-in">` и добавить CSS-анимацию.
+
+---
+
+### LI-12: Избыточный `ssr: false` — задвоен в routeRules и definePageMeta
+
+**Severity:** LOW
+
+**Location:**
+- `nuxt.config.ts:93` — `routeRules: { '/profile': { ssr: false } }`
+- `app/pages/profile.vue:5` — `definePageMeta({ ssr: false })`
+
+**Impact:** SSR для `/profile` отключается дважды — в конфигурации и на странице. Один из способов избыточен. Не ломает ничего, но дублирует конфигурацию.
+
+**Fix:** Оставить только `routeRules` в `nuxt.config.ts`, убрать `definePageMeta({ ssr: false })` из `profile.vue`.
+
+---
+
+### LI-13: `SkeletonAnimeDetail.vue` — инлайн-стили bypass БЭМ
+
+**Severity:** LOW
+
+**Location:** `app/components/shared/SkeletonAnimeDetail.vue:5-10` — `style="width: 70%; height: 28px;"`
+
+**Impact:** Использование инлайн-стилей в шаблоне противоречит БЭМ-методологии проекта. Стили должны быть вынесены в CSS-классы с модификаторами.
+
+**Fix:** Добавить БЭМ-классы (`.skeleton-card__title_small`, `.skeleton-card__subtitle_long`) и перенести стили в CSS.
+
+---
+
+### LI-14: `error?.statusMessage` — потенциально неверный тип
+
+**Severity:** LOW
+
+**Location:** `app/pages/index.vue:70` — `error?.statusMessage`
+
+**Impact:** `error` от `useAsyncData` имеет тип `NuxtError | null`, у которого нет поля `.statusMessage` напрямую. На практике работает через `as any` на более высоком уровне, но TypeScript может подсвечивать проблему.
+
+**Fix:** Использовать типизированную проверку: `(error as NuxtError)?.statusMessage` или определить правильный тип.
+
+---
+
 ## Architecture Review Summary
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — частично решены).
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — частично решены). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint.
 
 ### Ключевые архитектурные разрывы
 
@@ -693,7 +899,7 @@ const seasonOptions = computed(() => {
 | Пагинация | Infinite scroll + Paginator | Только Paginator с неверным total |
 | Попап | OverlayPanel desktop / Dialog mobile | Сломано (нет hide) + дублирование шаблона |
 | Поиск | URL-driven с debounce 400ms | Два конкурирующих механизма |
-| Темизация | `darkModeSelector: '.dark-mode'` | Класс не добавляется |
+| Темизация | `darkModeSelector: '.dark-mode'` + `definePreset` | ✅ Класс `.dark-mode` через inline-скрипт, кастомный preset |
 | SSR safety | `@vueuse/nuxt` для `useStorage` | ✅ Установлен, SSR работает |
 | UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | PrimeVue Aura-тема работает, но нет дизайн-системы |
 | Шрифты | Inter в `font-family` | Не подключён — FOIT/FOUT |
@@ -706,23 +912,28 @@ const seasonOptions = computed(() => {
 3. ~~**CRITICAL** — Поиск: убрать `@input` из header, оставить только сабмит по Enter (CI-3)~~ ✅ **Готово**
 4. ~~**CRITICAL** — Пагинация: Paginator → "Load more" кнопка (CI-2)~~ ✅ **Готово**
 5. ~~**HIGH** — SelectButton `optionLabel`/`optionValue` fix (HI-1)~~ ✅ **Готово**
-6. ~~**HIGH** — Добавить `.dark-mode` класс на `<html>` в `onMounted` (HI-3)~~ ✅ **Готово**
+6. ~~**HIGH** — Добавить `.dark-mode` класс на `<html>` через inline-скрипт, кастомизация через `definePreset` (HI-3)~~ ✅ **Готово**
+7. **CRITICAL** — Исправить `refresh` в `useAsyncData` на `[id].vue` (CI-4)
+8. **CRITICAL** — Синхронизировать Cache-Control в тесте и серверном роуте (CI-5)
 
 **Phase 2 — Refactoring (декомпозиция монолитов):**
 5. **HIGH** — Вынести `AnimeCard.vue` из index.vue (HI-4 Phase 1)
 6. **HIGH** — Починить OverlayPanel → `AnimePreviewPopup.vue` (HI-2)
 7. **HIGH** — Санитизировать `v-html` (HI-5)
 8. **HIGH** — Декомпозиция остальных компонентов (HI-4 Phase 2)
+9. **HIGH** — Подключить `SkeletonCatalogGrid.vue` в index.vue (HI-11)
+10. **HIGH** — Добавить дефолтный `icon` в `EmptyState.vue` (HI-12)
+11. **HIGH** — Заменить `window.innerWidth` на `useMediaQuery` в `AnimePreviewPopup.vue` (HI-13)
 
 **Phase 3 — UI/Design (визуальное качество):**
-9. **HIGH** — UI/визуальный редизайн: кнопки, типографика, hover-состояния (HI-7)
-10. **HIGH** — CSS-система: контраст, fluid-типографика, вертикальный ритм (HI-8)
-11. **HIGH** — Spacing/layout: единообразные отступы, max-width плеера (HI-9)
-12. **HIGH** — Подключить шрифты: Inter через `@nuxt/fonts` (HI-10)
+12. **HIGH** — UI/визуальный редизайн: кнопки, типографика, hover-состояния (HI-7)
+13. **HIGH** — CSS-система: контраст, fluid-типографика, вертикальный ритм (HI-8)
+14. **HIGH** — Spacing/layout: единообразные отступы, max-width плеера (HI-9)
+15. **HIGH** — Подключить шрифты: Inter через `@nuxt/fonts` (HI-10)
 
 **Phase 4 — Quality (долг):**
-13. **MEDIUM** — Архитектурный долг (MI-1–12)
-14. **LOW** — Косметические фиксы (LI-1–8)
+16. **MEDIUM** — Архитектурный долг (MI-1–14)
+17. **LOW** — Косметические фиксы (LI-1–14)
 
 ### Рекомендации по рефакторингу
 
@@ -739,4 +950,4 @@ const seasonOptions = computed(() => {
 
 ---
 
-*Последнее обновление: 2026-05-21*
+*Последнее обновление: 2026-05-22 — обновлён HI-3 (inline-скрипт + definePreset), архитектурная сводка синхронизирована*

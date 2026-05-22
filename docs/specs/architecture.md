@@ -58,8 +58,10 @@ docs/
 - CSS custom properties для цветов, размеров, отступов
 - Компонентные CSS-файлы (`<style scoped>` или отдельные `.css`)
 - CSS Grid для раскладки (без Tailwind)
+- PrimeVue-тема кастомизируется через `definePreset` в `nuxt.config.ts` (Aura base + overrides)
 
 ---
 
 *Последнее обновление: 2026-05-22 — обновлена структура проекта: компоненты разложены по feature-based папкам, добавлены 6 новых компонентов (Header, Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail) и 3 новых composable (useHeaderSearch, useCatalogSearchState, useCatalogPagination).*
 *Последнее обновление: 2026-05-22 — GraphQL-запросы переведены на `graphql-tag` + `TypedDocumentNode` для type safety. Добавлен `graphql.config.ts` для WebStorm IDE.*
+*Последнее обновление: 2026-05-22 — PrimeVue-тема кастомизируется через `definePreset` (Aura base + overrides)*
