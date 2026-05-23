@@ -1,268 +1,203 @@
 <script setup lang="ts">
 import type { Anime, UserListStatus } from '~/types/anime'
+import { useMediaQuery } from '@vueuse/core'
+import PopupContent from './PopupContent.vue'
 
 const props = defineProps<{
   anime: Anime | null
   isInList: boolean
   listStatus?: UserListStatus | null
+  position: DOMRect | null
 }>()
 
 const emit = defineEmits<{
   'add-to-list': [animeId: string, status: UserListStatus]
   navigate: [animeId: string]
   hide: []
+  mouseenter: []
+  mouseleave: []
 }>()
 
-const isMobile = ref(false)
-const overlayPanelRef = ref()
-const dialogVisible = ref(false)
-
-const onResize = () => { isMobile.value = window.innerWidth < 768 }
-onMounted(() => {
-  isMobile.value = window.innerWidth < 768
-  window.addEventListener('resize', onResize)
-})
-onUnmounted(() => window.removeEventListener('resize', onResize))
-
-// Watch anime prop: show/hide popup accordingly
-watch(() => props.anime, (val) => {
-  if (!val) {
-    dialogVisible.value = false
-  } else if (isMobile.value) {
-    dialogVisible.value = true
-  }
-})
-
-// Emit hide when mobile dialog is dismissed
-watch(dialogVisible, (val) => {
-  if (!val && props.anime) {
-    emit('hide')
-  }
-})
-
-function kindLabel(kind: string): string {
-  const map: Record<string, string> = { tv: 'TV', movie: 'Movie', ova: 'OVA', ona: 'ONA', special: 'Special', music: 'Music' }
-  return map[kind] || kind
+/** Desktop close button — скрываем попап через emit */
+function closePopup() {
+  emit('hide')
 }
 
-/** Show the popup (desktop via OverlayPanel, mobile via Dialog) */
-function show(event: MouseEvent) {
-  if (!isMobile.value && overlayPanelRef.value) {
-    overlayPanelRef.value.show(event)
-  }
-}
+const isMobile = useMediaQuery('(max-width: 767px)')
 
-defineExpose({ show })
+const POPUP_WIDTH = 320
+const H_GAP = 12
+const EDGE_PADDING = 40
+const ESTIMATED_HEIGHT = 400
+const VERT_OFFSET = ESTIMATED_HEIGHT * 0.4 // 80px — 20% от высоты попапа
+
+/** Desktop — вычисляем позицию относительно карточки */
+const popupStyle = computed(() => {
+  if (!props.position || isMobile.value) return {}
+
+  const card = props.position
+
+  // === Горизонталь: справа от карточки, если влезает ===
+  let left = card.right + H_GAP
+  if (left + POPUP_WIDTH > window.innerWidth) {
+    left = card.left - POPUP_WIDTH - H_GAP
+  }
+  left = Math.max(left, EDGE_PADDING)
+
+  // === Вертикаль ===
+  const preferredTop = card.top + VERT_OFFSET
+  const overflowsBottom = preferredTop + ESTIMATED_HEIGHT > window.innerHeight - EDGE_PADDING
+
+  // Если попап не влезает снизу — прижимаем к нижнему краю (+40px), чтобы кнопки были видны
+  if (overflowsBottom) {
+    return {
+      position: 'fixed',
+      left: `${left}px`,
+      bottom: `${EDGE_PADDING}px`,
+      zIndex: 1000,
+      maxWidth: `${POPUP_WIDTH}px`,
+      maxHeight: `calc(100vh - ${EDGE_PADDING * 2}px)`,
+      overflowY: 'auto',
+    } as const
+  }
+
+  // Влезает — позиционируем под карточкой
+  return {
+    position: 'fixed',
+    left: `${left}px`,
+    top: `${Math.max(preferredTop, EDGE_PADDING)}px`,
+    zIndex: 1000,
+    maxWidth: `${POPUP_WIDTH}px`,
+  } as const
+})
+
+/** Показываем если есть аниме и позиция (десктоп) или просто есть аниме (мобильный) */
+const canShow = computed(() => props.anime && (isMobile.value || props.position))
 </script>
 
 <template>
-  <!-- Desktop OverlayPanel popup -->
-  <ClientOnly>
-    <POverlayPanel
-      ref="overlayPanelRef"
-      :breakpoints="{ '768px': '0px' }"
-      class="anime-preview-popup__overlay"
-      @hide="emit('hide')"
-    >
-      <template v-if="anime">
-        <div class="popup">
-          <div class="popup__header">
-            <h4 class="popup__title">{{ anime.russian || anime.name }}</h4>
-            <span v-if="anime.name !== anime.russian" class="popup__alt-title">
-              {{ anime.name }}
-            </span>
-          </div>
+  <Teleport to="body">
+    <Transition name="preview-popup">
+      <div
+        v-if="canShow"
+        :class="['preview-popup', { 'preview-popup_mobile': isMobile }]"
+        :style="isMobile ? {} : popupStyle"
+        @mouseenter="$emit('mouseenter')"
+        @mouseleave="$emit('mouseleave')"
+      >
+        <!-- Mobile bottom sheet header -->
+        <div v-if="isMobile" class="preview-popup__handle" />
 
-          <div class="popup__meta">
-            <span v-if="anime.airedOn?.year" class="popup__meta-item">
-              {{ anime.airedOn.year }} г.
-            </span>
-            <span v-if="anime.episodes" class="popup__meta-item">
-              {{ anime.episodesAired }}/{{ anime.episodes }} эп.
-            </span>
-            <span v-if="anime.duration" class="popup__meta-item">
-              {{ anime.duration }} мин.
-            </span>
-            <PTag
-              :value="kindLabel(anime.kind)"
-              severity="secondary"
-              class="popup__kind"
-            />
-          </div>
+        <!-- Desktop close button -->
+        <button
+          v-else
+          class="preview-popup__close"
+          @click="closePopup"
+          aria-label="Закрыть"
+        >
+          <i class="pi pi-times" />
+        </button>
 
-          <div v-if="anime.genres?.length" class="popup__genres">
-            <PChip
-              v-for="genre in anime.genres.slice(0, 4)"
-              :key="genre.id"
-              :label="genre.russian || genre.name"
-              class="popup__genre"
-            />
-          </div>
-
-          <p v-if="anime.description" class="popup__description">
-            {{ anime.description.slice(0, 200) }}{{ anime.description.length > 200 ? '...' : '' }}
-          </p>
-
-          <div class="popup__actions">
-            <PButton
-              :label="isInList ? 'В списке' : 'В список'"
-              :icon="isInList ? 'pi pi-check' : 'pi pi-plus'"
-              size="small"
-              @click="emit('add-to-list', anime.id, 'planned')"
-            />
-            <PButton
-              label="Подробнее"
-              icon="pi pi-arrow-right"
-              size="small"
-              severity="secondary"
-              @click="emit('navigate', anime.id)"
-            />
-          </div>
-        </div>
-      </template>
-    </POverlayPanel>
-  </ClientOnly>
-
-  <!-- Mobile Dialog popup -->
-  <PDialog
-    v-if="isMobile && anime"
-    v-model:visible="dialogVisible"
-    position="bottom"
-    :style="{ width: '100%', maxHeight: '80vh' }"
-    :dismissable-mask="true"
-    :closable="true"
-    header=" "
-    class="anime-preview-popup__dialog"
-  >
-    <template v-if="anime">
-      <div class="popup">
-        <div class="popup__header">
-          <h4 class="popup__title">{{ anime.russian || anime.name }}</h4>
-          <span v-if="anime.name !== anime.russian" class="popup__alt-title">
-            {{ anime.name }}
-          </span>
-        </div>
-
-        <div class="popup__meta">
-          <span v-if="anime.airedOn?.year" class="popup__meta-item">
-            {{ anime.airedOn.year }} г.
-          </span>
-          <span v-if="anime.episodes" class="popup__meta-item">
-            {{ anime.episodesAired }}/{{ anime.episodes }} эп.
-          </span>
-          <PTag
-            :value="kindLabel(anime.kind)"
-            severity="secondary"
-            class="popup__kind"
-          />
-        </div>
-
-        <div v-if="anime.genres?.length" class="popup__genres">
-          <PChip
-            v-for="genre in anime.genres.slice(0, 4)"
-            :key="genre.id"
-            :label="genre.russian || genre.name"
-            class="popup__genre"
-          />
-        </div>
-
-        <p v-if="anime.description" class="popup__description">
-          {{ anime.description.slice(0, 150) }}{{ anime.description.length > 150 ? '...' : '' }}
-        </p>
-
-        <div class="popup__actions">
-          <PButton
-            :label="isInList ? 'В списке' : 'В список'"
-            :icon="isInList ? 'pi pi-check' : 'pi pi-plus'"
-            @click="emit('add-to-list', anime.id, 'planned')"
-          />
-          <PButton
-            label="Подробнее"
-            icon="pi pi-arrow-right"
-            severity="secondary"
-            @click="emit('navigate', anime.id)"
-          />
-        </div>
+        <PopupContent
+          v-if="anime"
+          :anime="anime"
+          :is-in-list="isInList"
+          :list-status="listStatus"
+          @add-to-list="emit('add-to-list', $event)"
+        />
       </div>
-    </template>
-  </PDialog>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
-.anime-preview-popup__overlay {
-  /* OverlayPanel styling is provided by PrimeVue tokens */
-}
-
-.anime-preview-popup__dialog {
-  /* Dialog styling is provided by PrimeVue tokens */
-}
-
-.popup {
-  padding: var(--space-1);
-  max-width: 320px;
-}
-
-.popup__header {
-  margin-bottom: var(--space-3);
-}
-
-.popup__title {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.popup__alt-title {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  display: block;
-  margin-top: 2px;
-}
-
-.popup__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  margin-bottom: var(--space-3);
-}
-
-.popup__meta-item {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-}
-
-.popup__genres {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
-}
-
-.popup__genre {
-  font-size: var(--text-xs) !important;
-}
-
-.popup__description {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-relaxed);
-  margin-bottom: var(--space-4);
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
+/* ====== Desktop popup ====== */
+.preview-popup {
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: var(--border-radius-lg, 12px);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4));
+  width: 100%;
   overflow: hidden;
+  pointer-events: auto;
+  padding: 20px;
 }
 
-.popup__actions {
+.preview-popup__close {
+  position: absolute;
+  top: var(--space-2, 8px);
+  right: var(--space-2, 8px);
+  width: 28px;
+  height: 28px;
   display: flex;
-  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: color-mix(in srgb, var(--bg-page, #0f0f1a) 70%, transparent);
+  color: var(--text-secondary, #9898b8);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1;
+  font-size: var(--text-sm, 14px);
+  backdrop-filter: blur(4px);
+  transition: background var(--transition-fast, 150ms), color var(--transition-fast, 150ms);
 }
 
-@media (max-width: 768px) {
-  .popup {
-    max-width: 100%;
-  }
+.preview-popup__close:hover {
+  background: var(--bg-surface, #1e1e38);
+  color: var(--text-primary, #e8e8f0);
+}
+
+/* ====== Mobile bottom sheet ====== */
+.preview-popup_mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: var(--border-radius-lg, 12px) var(--border-radius-lg, 12px) 0 0;
+  border-bottom: none;
+  padding: 20px;
+}
+
+.preview-popup__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted, #9999bb);
+  margin: var(--space-2, 8px) auto;
+  opacity: 0.4;
+}
+
+/* ====== Transition animation ====== */
+.preview-popup-enter-active {
+  transition: opacity var(--transition-normal, 200ms) ease-out,
+              transform var(--transition-normal, 200ms) ease-out;
+}
+
+.preview-popup-leave-active {
+  transition: opacity var(--transition-fast, 150ms) ease-in,
+              transform var(--transition-fast, 150ms) ease-in;
+}
+
+.preview-popup-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.preview-popup-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Mobile animation — slide up */
+.preview-popup_mobile.preview-popup-enter-from {
+  transform: translateY(100%);
+}
+
+.preview-popup_mobile.preview-popup-leave-to {
+  transform: translateY(100%);
 }
 </style>

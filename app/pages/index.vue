@@ -2,6 +2,12 @@
 import type { Anime, UserListStatus } from '~/types/anime'
 
 const router = useRouter()
+
+const {
+  selectedAnime, popupRect, isVisible,
+  onCardEnter, onCardLeave,
+  onPopupEnter, onPopupLeave,
+} = usePopupHover()
 const { baseParams, filterState, onFilterChange } = useCatalogSearchState()
 const api = useAnimeApi()
 
@@ -31,14 +37,8 @@ function handlePopupAddToList(animeId: string, status: UserListStatus) {
   })
 }
 
-// === Hover popup ===
-const popupRef = ref()
-const selectedAnime = ref<Anime | null>(null)
-function showPopup(event: Event, anime: Anime) {
-  selectedAnime.value = anime
-  popupRef.value?.show(event)
-}
-function onPopupHide() { selectedAnime.value = null }
+// === Hover popup (кастомный, вместо PrimeVue OverlayPanel) ===
+// usePopupHover() подключён выше
 </script>
 
 <template>
@@ -79,7 +79,8 @@ function onPopupHide() { selectedAnime.value = null }
             :key="anime.id"
             :anime="anime"
             :list-status="getStatus(String(anime.id))"
-            @preview="(e) => showPopup(e, anime)"
+            @preview="(e) => onCardEnter(anime, e)"
+            @mouseleave="onCardLeave"
           />
         </div>
 
@@ -97,15 +98,17 @@ function onPopupHide() { selectedAnime.value = null }
       </template>
     </div>
 
-    <!-- Preview popup (OverlayPanel desktop / Dialog mobile) -->
+    <!-- Preview popup (кастомный, вместо PrimeVue OverlayPanel + Dialog) -->
     <AnimePreviewPopup
-      ref="popupRef"
       :anime="selectedAnime"
       :is-in-list="selectedAnime ? isInList(String(selectedAnime.id)) : false"
       :list-status="selectedAnime ? getStatus(String(selectedAnime.id)) : null"
+      :position="popupRect"
       @add-to-list="handlePopupAddToList"
       @navigate="(id) => navigateTo(`/anime/${id}`)"
-      @hide="onPopupHide"
+      @mouseenter="onPopupEnter"
+      @mouseleave="onPopupLeave"
+      @hide="onCardLeave"
     />
   </div>
 </template>
