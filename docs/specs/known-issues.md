@@ -1,7 +1,7 @@
 # Known Issues (AnimeBaza)
 
 > **Дата аудита:** 2026-05-23  
-> **Последнее обновление:** 2026-05-23 — HI-9 resolved: dynamic card count via useCatalogFillPage
+> **Последнее обновление:** 2026-05-23 — HI-2/HI-13 resolved: custom hover popup вместо PrimeVue OverlayPanel
 > **Объём:** Все страницы, composables, server routes, конфигурация, типы
 > **Метод:** Полный code review + анализ архитектурных расхождений
 
@@ -167,32 +167,40 @@
 
 ---
 
-### HI-2: OverlayPanel popup — переписать без PrimeVue (кастомный HTML+CSS+JS)
+### HI-2: OverlayPanel popup — заменён на кастомный HTML+CSS+JS
 
 **Severity:** HIGH
 
-**Status:** ❌ PENDING — PrimeVue OverlayPanel не подходит для hover-поведения. Нужен кастомный popup.
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:** `app/components/catalog/AnimePreviewPopup.vue`, `app/composables/usePopupHover.ts`, `app/pages/index.vue`
 
-**Impact:**
-- Popup не работает: `TypeError: can't access property "offsetHeight", e is null`
-- OverlayPanel PrimeVue не предназначен для hover UX (show/hide только императивно)
-- Зоопарк: OverlayPanel (desktop) + Dialog (mobile) + usePopupHover (bridge) — слишком сложно для тривиальной задачи
+**Impact (до фикса):**
+- Popup не работал: `TypeError: can't access property "offsetHeight", e is null` — известный баг PrimeVue Popover (#3164) при асинхронных show/hide циклах
+- Popup позиционировался относительно `event.currentTarget` (карточки) через `absolutePosition`. В CSS Grid `auto-fill minmax(180px, 1fr)` карточка занимает всю ширину колонки — места для показа popup сбоку нет, он перекрывает соседние карточки
+- Два компонента (POverlayPanel desktop + PDialog mobile) с разной логикой управления
+- SSR-небезопасный `window.innerWidth` (HI-13)
 
-**Required Fix (кастомный popup):**
-Переписать без PrimeVue. Решение — `<div>` с CSS-классами:
-- Позиционирование: position: absolute + transform (привязка к карточке через `useMouse` или координаты)
-- Hover bridge в composable: 300ms delay show, 150ms grace hide
-- Анимация: CSS `opacity` + `transform` transition (вместо JS show/hide)
-- Responsive: десктоп — абсолютный popup рядом с карточкой; мобильные — bottom sheet (`position: fixed` + `bottom: 0`)
-- PopupContent.vue уже вынесен — переиспользовать
-- `usePopupHover.ts` composable уже есть — починить race condition (pendingEvent null) при переделке
+**Root Cause:** PrimeVue Popover (v4, наследник OverlayPanel) спроектирован для click-based триггеров — позиционирование привязано к bounding box целевого элемента. В CSS Grid это даёт непредсказуемое позиционирование (попап перекрывает соседние карточки). Дополнительно — баг #3164 (offsetHeight null при async show/hide).
 
-**Что будет удалено:**
-- `POverlayPanel` — заменить на `<div class="preview-popup">`
-- `PDialog` (мобильный) — заменить на `<div class="preview-popup preview-popup_mobile">`
-- Императивный `popup.show(event)` / `popup.hide()` — заменить на реактивный `v-if` + CSS transition
+**Fix Applied (2026-05-23):**
+1. POverlayPanel и PDialog удалены. Вместо них — кастомный `<div>` с `position: fixed`
+2. Создан composable `usePopupHover.ts` с hover bridge:
+   - 300ms таймер показа (не дёргать при быстром скольжении)
+   - 150ms grace-период скрытия (успевает переместить мышь на попап)
+   - `onCardEnter(anime, event)` — запоминает `getBoundingClientRect` карточки
+   - `onCardLeave()` / `onPopupEnter()` / `onPopupLeave()` — hover bridge
+   - Clean-up таймеров в `onUnmounted`
+3. Позиционирование: `position: fixed`, расчёт left/top из bounding rect карточки:
+   - Десктоп: справа от карточки (+12px gap), если не влезает — слева
+   - Вертикальный отступ: 20% от оценочной высоты попапа (~80px) ниже верхнего края карточки
+   - Если не влезает снизу — прижимаем к нижнему краю (`bottom: 40px`), чтобы кнопки были видны
+   - Защита от выхода за края экрана: 40px padding сверху и снизу
+   - Мобильные: bottom sheet на всю ширину
+4. Анимация: CSS transition (opacity + translateY, 200ms)
+5. SSR-safe `useMediaQuery('(max-width: 767px)')` вместо `window.innerWidth` (HI-13 fixed)
+6. PopupContent.vue переиспользован без изменений
+7. Удалён: `popupRef`, `showPopup()`, `onPopupHide()`, императивный `show(event)`
 
 ---
 
@@ -465,20 +473,20 @@ const safeDescriptionHtml = computed(async () => {
 
 **Severity:** HIGH
 
-**Status:** ❌ FAILED (2026-05-23) — фикс был откачен вместе с popup-изменениями (git checkout). AnimePreviewPopup.vue снова использует `window.innerWidth`.
+**Status:** ✅ RESOLVED (2026-05-23) — исправлено вместе с HI-2.
 
-**Location:** `app/components/catalog/AnimePreviewPopup.vue:20-23`
+**Location:** `app/components/catalog/AnimePreviewPopup.vue:18`
 
 **Impact:** `onMounted(() => { isMobile.value = window.innerWidth < 768 })` — технически безопасно (onMounted работает только на клиенте в Nuxt), но между SSR-гидрацией и монтированием `isMobile` всегда `false`. Это вызывает визуальный флеш: на мобильных устройствах сначала отрисовывается десктопный OverlayPanel, который затем заменяется на Dialog.
 
 **Root Cause:** Прямой доступ к `window.innerWidth` без SSR-safe альтернативы. `useMediaQuery` из VueUse предоставляет реактивный SSR-safe вариант.
 
-**Attempted Fix (2026-05-23):**
+**Fix Applied (2026-05-23):**
 ```ts
 import { useMediaQuery } from '@vueuse/core'
 const isMobile = useMediaQuery('(max-width: 767px)')
 ```
-**Откачен** 2026-05-23 вместе с HI-2 (popup переделка). Требует повторного применения.
+Заменён вместе с переделкой popup (HI-2). Удалён `onMounted` с `window.innerWidth`, удалён `window.addEventListener('resize', onResize)` — утечка памяти (MI-1) тоже починена.
 
 ---
 
@@ -884,7 +892,7 @@ const seasonOptions = computed(() => {
 
 **Severity:** MEDIUM
 
-**Status:** ✅ RESOLVED (2026-05-23) — шаблон вынесен в `<PopupContent.vue>`. Функциональность попапа сломана из-за бага в `usePopupHover` (см. HI-2).
+**Status:** ✅ RESOLVED (2026-05-23) — шаблон вынесен в `<PopupContent.vue>`. Используется в новом кастомном popup (HI-2).
 
 **Location:** `app/components/catalog/AnimePreviewPopup.vue:58-188` — два идентичных блока содержимого popup для OverlayPanel и Dialog
 
@@ -934,7 +942,7 @@ const seasonOptions = computed(() => {
 
 **Impact:** Копи-паст шаблона. При изменении popup нужно обновлять два места. Риск рассинхронизации.
 
-**Fix Applied (2026-05-23):** Исправлено совместно с MI-14 и HI-2 — дублированный шаблон вынесен в `<PopupContent.vue>`, используется как в Desktop OverlayPanel, так и в Mobile Dialog.
+**Fix Applied (2026-05-23):** Исправлено совместно с MI-14 и HI-2 — дублированный шаблон вынесен в `<PopupContent.vue>`, используется в кастомном popup (Desktop/Mobile через useMediaQuery).
 
 ---
 
@@ -1093,7 +1101,7 @@ const seasonOptions = computed(() => {
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап требует переписывания без PrimeVue (HI-2). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка фильтров (HI-18) и профиля (HI-19) требуют доработки.
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переписан на кастомный `<div>` вместо PrimeVue OverlayPanel (HI-2/HI-13). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка фильтров (HI-18) и профиля (HI-19) требуют доработки.
 
 ### Ключевые архитектурные разрывы
 
@@ -1103,7 +1111,7 @@ const seasonOptions = computed(() => {
 | CSS | БЭМ с отдельными файлами | ✅ Стили распределены по компонентам |
 | Роутинг | `/catalog`, `/anime/[id]`, `/favorites`, `/profile` | `/`, `/anime/[id]`, `/login`, `/profile` |
 | Пагинация | Infinite scroll + Paginator | ✅ Load More кнопка (CI-2) |
-| Попап | OverlayPanel desktop / Dialog mobile | ❌ Нужен кастомный popup без PrimeVue (HI-2) |
+| Попап | OverlayPanel desktop / Dialog mobile | ✅ Кастомный `<div>` (position: fixed, CSS transition) + usePopupHover (HI-2) |
 | UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | ✅ `clamp()`, Button preset, динамический fill-page (HI-7, HI-9), плеер требует калибровки |
 | Шрифты | Inter в `font-family` | ✅ Inter через Google Fonts `app.head.link` (HI-10) |
 
@@ -1121,7 +1129,7 @@ const seasonOptions = computed(() => {
 
 **Phase 2 — Refactoring (декомпозиция монолитов):**
 5. ~~**HIGH** — Вынести `AnimeCard.vue` из index.vue (HI-4)~~ ✅ **Готово**
-6. **HIGH** — Переписать popup без PrimeVue: кастомный `<div>` + CSS-анимация + `usePopupHover` (HI-2) ❌ **Нужен кастомный popup**
+6. ~~**HIGH** — Переписать popup без PrimeVue: кастомный `<div>` + CSS-анимация + `usePopupHover` (HI-2)~~ ✅ **Готово**
 7. ~~**HIGH** — Санитизировать `v-html` (HI-5)~~ ✅ **Готово**
 8. ~~**HIGH** — Декомпозиция остальных компонентов (HI-4 Phase 2)~~ ✅ **Готово**
 9. ~~**HIGH** — Подключить `SkeletonCatalogGrid.vue` в index.vue (HI-11)~~ ✅ **Готово**
@@ -1163,3 +1171,4 @@ const seasonOptions = computed(() => {
 *Последнее обновление: 2026-05-23 — все HI/LI/MI Phase 2-3 исправления отмечены как RESOLVED; архитектурная сводка обновлена*
 *Последнее обновление: 2026-05-23 — добавлены HI-14–17 (скелетоны, профиль, английский текст)*
 *Последнее обновление: 2026-05-23 — добавлены HI-18 (мобильные фильтры) и HI-19 (мобильный профиль)*
+*Последнее обновление: 2026-05-23 — HI-2/HI-13 resolved: кастомный popup (position: fixed) + usePopupHover вместо POverlayPanel/PDialog*
