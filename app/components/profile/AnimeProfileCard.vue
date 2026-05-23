@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { USER_LIST_LABELS } from '~/types/anime'
+import type { UserListItem } from '~/types/anime'
+
+defineProps<{
+  animeId: string
+  item: UserListItem
+}>()
+
+defineEmits<{
+  remove: [animeId: string]
+}>()
+</script>
+
 <template>
   <div class="anime-profile-card">
     <NuxtLink
@@ -12,7 +26,7 @@
       <div class="anime-profile-card__info">
         <span class="anime-profile-card__name">{{ item.russian || item.name }}</span>
         <PTag
-          :value="USER_LIST_LABELS[item.status as UserListStatus]"
+          :value="Object.hasOwn(USER_LIST_LABELS, item.status) ? USER_LIST_LABELS[item.status] : item.status"
           :class="`tag-${item.status}`"
           class="anime-profile-card__status"
         />
@@ -35,20 +49,6 @@
     />
   </div>
 </template>
-
-<script setup lang="ts">
-import { USER_LIST_LABELS } from '~/types/anime'
-import type { UserListItem, UserListStatus } from '~/types/anime'
-
-defineProps<{
-  animeId: string
-  item: UserListItem
-}>()
-
-defineEmits<{
-  remove: [animeId: string]
-}>()
-</script>
 
 <style scoped>
 .anime-profile-card {

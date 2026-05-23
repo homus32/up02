@@ -88,7 +88,6 @@ onMounted(async () => {
           :alt="anime.russian || anime.name"
           preview
           loading="eager"
-          fetchpriority="high"
         />
       </div>
 

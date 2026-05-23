@@ -2,8 +2,6 @@
 import { USER_LIST_STATUSES, USER_LIST_LABELS } from '~/types/anime'
 import type { UserListStatus } from '~/types/anime'
 
-definePageMeta({ ssr: false })
-
 const router = useRouter()
 const { isLoggedIn, username, logout } = useAuth()
 const { getByStatus, removeFromList, getListStats } = useUserLists()
