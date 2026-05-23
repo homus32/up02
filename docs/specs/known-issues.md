@@ -1,6 +1,7 @@
 # Known Issues (AnimeBaza)
 
-> **Дата аудита:** 2026-05-23
+> **Дата аудита:** 2026-05-23  
+> **Последнее обновление:** 2026-05-23 — добавлены HI-18 (мобильные фильтры) и HI-19 (мобильный профиль)
 > **Объём:** Все страницы, composables, server routes, конфигурация, типы
 > **Метод:** Полный code review + анализ архитектурных расхождений
 
@@ -166,28 +167,32 @@
 
 ---
 
-### HI-2: OverlayPanel popup — нет hide-on-mouseleave, позиционирование ненадёжно
+### HI-2: OverlayPanel popup — переписать без PrimeVue (кастомный HTML+CSS+JS)
 
 **Severity:** HIGH
 
-**Status:** ❌ FAILED (2026-05-23) — `usePopupHover` вызывает `TypeError: can't access property "offsetHeight", e is null`
+**Status:** ❌ PENDING — PrimeVue OverlayPanel не подходит для hover-поведения. Нужен кастомный popup.
 
-**Location:** `app/pages/index.vue:148-161, 270, 353-415`
+**Location:** `app/components/catalog/AnimePreviewPopup.vue`, `app/composables/usePopupHover.ts`, `app/pages/index.vue`
 
 **Impact:**
-- Popup показывается при `@mouseenter` на карточке (строка 270), но **никогда не скрывается** при `@mouseleave`
-- Нет "hover bridge" — если пользователь двигает мышь между карточками, popup мигает
-- OverlayPanel управляется императивно (`popup.value.show(event)`) и позиционируется относительно `event.target`, что ненадёжно при скролле
-- На мобильных popup заменяется на Dialog, но дублирование шаблона popup (строки 360-413 и 430-478) — copy-paste
+- Popup не работает: `TypeError: can't access property "offsetHeight", e is null`
+- OverlayPanel PrimeVue не предназначен для hover UX (show/hide только императивно)
+- Зоопарк: OverlayPanel (desktop) + Dialog (mobile) + usePopupHover (bridge) — слишком сложно для тривиальной задачи
 
-**Root Cause:** OverlayPanel не предназначен для hover-поведения на списке элементов. Его API требует явного show/hide. Решение с `@mouseenter` без `@mouseleave` и без hover-intent (задержка перед показом) — хрупкое.
+**Required Fix (кастомный popup):**
+Переписать без PrimeVue. Решение — `<div>` с CSS-классами:
+- Позиционирование: position: absolute + transform (привязка к карточке через `useMouse` или координаты)
+- Hover bridge в composable: 300ms delay show, 150ms grace hide
+- Анимация: CSS `opacity` + `transform` transition (вместо JS show/hide)
+- Responsive: десктоп — абсолютный popup рядом с карточкой; мобильные — bottom sheet (`position: fixed` + `bottom: 0`)
+- PopupContent.vue уже вынесен — переиспользовать
+- `usePopupHover.ts` composable уже есть — починить race condition (pendingEvent null) при переделке
 
-**Attempted Fix (2026-05-23):**
-1. Создан `app/composables/usePopupHover.ts` — composable с hover bridge (300ms show delay, 150ms hide grace period), предотвращает мигание при переходе между карточками
-2. Popup управляется через `usePopupHover` вместо императивного show/hide
-3. Дублированный шаблон (Desktop OverlayPanel / Mobile Dialog) вынесен в отдельный компонент `<PopupContent>` (MI-14)
-4. `AnimePreviewPopup.vue` сокращён с 188 до 112 строк
-5. **Ошибка:** `watch(isHovered)` в `index.vue` вызывает `popupRef.value?.show(pendingEvent.value!)` — `pendingEvent.value` может быть `null` к моменту срабатывания watch, что приводит к ошибке `offsetHeight`. `cancel()` в `onPopupHide` очищает `pendingEvent` сразу, но `watch` может сработать после через nextTick.
+**Что будет удалено:**
+- `POverlayPanel` — заменить на `<div class="preview-popup">`
+- `PDialog` (мобильный) — заменить на `<div class="preview-popup preview-popup_mobile">`
+- Императивный `popup.show(event)` / `popup.hide()` — заменить на реактивный `v-if` + CSS transition
 
 ---
 
@@ -399,27 +404,24 @@ const safeDescriptionHtml = computed(async () => {
 
 **Severity:** HIGH
 
-**Status:** ❌ FAILED (2026-05-23) — `@nuxt/fonts` вызывает `IPC connection closed` при SSR в Nuxt 4.4.6. Удалён из modules. Требуется альтернативный подход.
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:** 
 - `app/assets/css/theme.css:52` — `font-family: 'Inter', ...`
-- Нет `@font-face`, нет предзагрузки, нет `font-display: swap`
+- `nuxt.config.ts:73-78` — `app.head.link` с Google Fonts
+- `package.json` — удалён `@nuxt/fonts`
 
-**Impact:** 
+**Impact (до фикса):** 
 - Шрифт Inter не подключён через веб — используется системный шрифт (или падает на запасной). Сайт выглядит не так, как задумано.
 - На машине разработчика Inter установлен локально, поэтому визуально шрифт отображается корректно.
 - При первой загрузке на машине без Inter — FOIT (Flash of Invisible Text) или FOUT (Flash of Unstyled Text).
 
-**Root Cause:** Inter указан как `font-family`, но не импортирован ни через `@import`, ни через `@font-face`, ни через Nuxt-модуль шрифтов.
+**Root Cause:** Inter указан как `font-family`, но не импортирован ни через `@import`, ни через `@font-face`, ни через Nuxt-модуль шрифтов. Первая попытка через `@nuxt/fonts` провалилась — пакет вызывает `IPC connection closed` при SSR в Nuxt 4.4.6 (ViteNode несовместимость с плагином `fontless`, который перехватывает CSS и делает файловый ввод-вывод в рантайме).
 
-**Attempted Fix (2026-05-23):**
-1. Установлен `@nuxt/fonts` — `pnpm add @nuxt/fonts`
-2. Добавлен в `modules` в `nuxt.config.ts`
-3. **Проблема:** `@nuxt/fonts` вызывает SSR crash (`IPC connection closed`) в ViteNode. Несовместимость с Nuxt 4.4.6.
-
-**Альтернативы:**
-- Загрузка Inter через CSS `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap')`
-- Использование `<link>` в `app.head` через nuxt.config.ts
+**Fix Applied (2026-05-23):**
+1. Удалён `@nuxt/fonts` из `dependencies` (пакет оставался в `package.json` после первой неудачной попытки)
+2. Добавлен `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">` в `app.head.link` в `nuxt.config.ts`
+3. Шрифт загружается через Google Fonts — никаких SSR-проблем, `font-display: swap` гарантирует отсутствие FOIT
 
 ---
 
@@ -480,6 +482,165 @@ import { useMediaQuery } from '@vueuse/core'
 const isMobile = useMediaQuery('(max-width: 767px)')
 ```
 **Откачен** 2026-05-23 вместе с HI-2 (popup переделка). Требует повторного применения.
+
+---
+
+### HI-14: `SkeletonAnimeDetail.vue` — скелетон не соответствует реальному layout страницы
+
+**Severity:** HIGH
+
+**Status:** ❌ PENDING
+
+**Location:**
+- `app/components/shared/SkeletonAnimeDetail.vue` — скелетон (постер + info grid)
+- `app/pages/anime/[id].vue:16` — `<SkeletonAnimeDetail v-if="status === 'pending'" />`
+- `app/components/anime/AnimeDetailHero.vue` — реальный компонент
+
+**Impact:**
+- Скелетон рендерит grid с постером (280px) + колонка информации (заголовок, подзаголовок, 3 линии описания)
+- Реальный layout страницы — это AnimeDetailHero (постер + метаданные + жанры + описание) + PlayerPlaceholder + AnimeDetailLists
+- Скелетон не отображает: PlayerPlaceholder, списки (AnimeDetailLists), блок с жанрами, метаданные (тип, статус, эпизоды, рейтинг)
+- Пользователь видит скелетон, потом резкий переход к полной странице — визуальный скачок
+
+**Root Cause:** Скелетон создавался, когда ещё был монолит (671 строка). После декомпозиции на AnimeDetailHero, PlayerPlaceholder, AnimeDetailLists — скелетон не обновлялся.
+
+**Fix:**
+- Синхронизировать структуру скелетона с реальной структурой страницы
+- Добавить заглушки для: PlayerPlaceholder (16:9 блок), блока метаданных, блока списков
+- Учесть мобильную версию (на мобилках постер сверху, информация снизу)
+
+---
+
+### HI-15: `SkeletonCatalogGrid.vue` — скелетон не соответствует `AnimeCard`
+
+**Severity:** HIGH
+
+**Status:** ❌ PENDING
+
+**Location:**
+- `app/components/shared/SkeletonCatalogGrid.vue` — скелетон (постер + title + subtitle)
+- `app/components/catalog/AnimeCard.vue` — реальная карточка (kind-badge, meta с status/score, actions)
+- `app/assets/css/theme.css:203-236` — CSS-классы skeleton-card
+
+**Impact:**
+- Скелетон состоит из: постера, title (14px высота), subtitle (12px, 60% ширина)
+- Реальная AnimeCard имеет: постер с PTag kind-badge оверлеем, title, meta (PTag status + score с иконкой), actions (кнопка "В список" или badge + delete)
+- Визуально: скелетон кажется «полым» — нет намёка на badge, рейтинг, кнопку
+- При загрузке реальная карточка выглядит гораздо плотнее скелетона
+
+**Root Cause:** Скелетон создавался для первой версии карточки и не обновлялся при рефакторинге AnimeCard.
+
+**Fix:**
+- Добавить в скелетон: блок meta (статус + рейтинг), блок actions (кнопка)
+- Добавить небольшой badge-элемент на постер (как kind-badge)
+- Сохранить shimmer-анимацию
+
+---
+
+### HI-16: `Profile.vue` — дублирование `:header` prop при использовании `#header` slot
+
+**Severity:** HIGH
+
+**Status:** ❌ PENDING
+
+**Location:**
+- `app/pages/profile.vue:50` — `:header="USER_LIST_LABELS[status]"` (prop)
+- `app/pages/profile.vue:52-61` — `#header` slot с тем же `{{ USER_LIST_LABELS[status] }}`
+
+**Impact:**
+- `:header="..."` передаёт текст заголовка через prop
+- `#header` slot полностью переопределяет шаблон заголовка, включая тот же текст + счётчик
+- Prop `:header` становится мёртвым кодом — он не используется, т.к. slot его перекрывает
+- Создаёт путаницу: при попытке изменить заголовок нужно править в двух местах (или slot не заметить)
+- PrimeVue может рендерить и header-prop, и header-slot одновременно в некоторых версиях → потенциальное визуальное дублирование
+
+**Root Cause:** Компонент создавался с `:header`, затем был добавлен `#header` slot для кастомного шаблона со счётчиком. Prop не был удалён.
+
+**Fix:**
+- Убрать `:header="USER_LIST_LABELS[status]"` — достаточно `#header` slot
+- Либо убрать `#header` slot и добавить счётчик через header-шаблон PrimeVue, если поддерживается
+
+---
+
+### HI-17: Английский текст в интерфейсе — перевести на русский
+
+**Severity:** HIGH
+
+**Status:** ❌ PENDING
+
+**Location:**
+- `app/components/profile/ProfileTabEmpty.vue:4` — `Nothing here yet`
+- `app/components/profile/ProfileTabEmpty.vue:6` — `Browse catalog`
+
+**Impact:**
+- Визуально: английские фразы среди русского интерфейса смотрятся инородно
+- `ProfileTabEmpty` используется в профиле для пустых списков — пользователь видит английский при первом входе
+
+**Root Cause:** Компонент создавался на английском, перевод не был внесён. Вся остальная часть приложения на русском.
+
+**Fix:**
+- `Nothing here yet` → `Здесь пока ничего нет`
+- `Browse catalog` → `Перейти в каталог`
+
+Проверка на наличие другого английского текста: выполнена. Все остальные строки в проекте уже на русском — кнопки (Войти, Выйти, В список, Удалить, Загрузить ещё, Повторить), сообщения (Ничего не найдено, Ошибка загрузки, Видео временно недоступно), плейсхолдеры (Поиск аниме...), лейблы (Запланировано, Смотрю, Просмотрено, Отложено, Брошено), header/footer. Единственный английский текст — в ProfileTabEmpty.vue.
+
+### HI-18: CatalogFilters — мобильная вёрстка фильтров на главной странице
+
+**Severity:** HIGH
+
+**Status:** ❌ PENDING
+
+**Location:**
+- `app/components/catalog/CatalogFilters.vue:82-130` — шаблон фильтров
+- `app/components/catalog/CatalogFilters.vue:159-168` — мобильные стили
+- `app/pages/index.vue:51` — `<CatalogFilters v-model="filterState" />`
+
+**Impact:** На мобильных экранах (<768px) фильтры выглядят неаккуратно:
+- **PSelectButton (Тип)** — 6 опций (Все, TV, Movie, OVA, ONA, Special) рендерятся в одну строку. На экране <480px кнопки переполняют контейнер, текст обрезается или кнопки переносятся на новую строку с разрывом.
+- **PSelectButton (Статус)** — 4 опции (Все, Онгоинг, Вышел, Анонс). На мобильных ширина каждой кнопки становится слишком маленькой для читаемого текста.
+- **PSelect (Сезон/Сортировка)** — на мобильных раскрывающиеся списки занимают всю ширину, раздувая фильтры.
+- **Общий лейаут**: На мобильных фильтры складываются в колонку (`flex-direction: column`), но сами контролы не адаптированы — SelectButton пытается уместить все опции горизонтально даже на 320px.
+- **Отсутствует scrollable-режим** для SelectButton на мобильных.
+
+**Root Cause:** Кастомный CSS для мобильной версии меняет только направление флекс-контейнера, но не адаптирует сами PrimeVue-компоненты под узкие экраны. Нет horizontal scroll для SelectButton, нет замены на dropdown, нет ограничений ширины.
+
+**Fix:**
+- Добавить horizontal scroll для SelectButton на мобильных (`overflow-x: auto` + `white-space: nowrap`)
+- Либо заменить SelectButton на PSelect (dropdown) на мобильных для Типа и Статуса
+- Уменьшить gap между фильтрами на мобильных
+- Ограничить `max-width` для PSelect на мобильных
+- Рассмотреть collapsible-фильтры (скрывать за кнопкой «Фильтры» на мобильных)
+
+---
+
+### HI-19: Profile — мобильная вёрстка страницы профиля
+
+**Severity:** HIGH
+
+**Status:** ❌ PENDING
+
+**Location:**
+- `app/pages/profile.vue:26-82` — шаблон страницы профиля
+- `app/pages/profile.vue:126-141` — мобильные стили
+- `app/components/profile/ProfileCard.vue:23-31` — stats (5 статусов)
+- `app/components/profile/AnimeProfileCard.vue:53-122` — карточка аниме в списке
+
+**Impact:** На мобильных экранах профиль выглядит неаккуратно:
+
+- **PTabView с 5 табами:** PrimeVue TabView не имеет пропа `scrollable`. На мобильных экранах (<480px) 5 вкладок (Запланировано, Смотрю, Просмотрено, Отложено, Брошено) переполняют контейнер — вкладки сжимаются до нечитаемого размера или переносятся. Нет horizontal scroll.
+- **ProfileCard stats:** 5 блоков статистики (`flex-wrap: wrap`) на мобильных выглядят как неровная сетка — по 2-3 блока в строке, последняя строка с одним блоком.
+- **AnimeProfileCard:** Карточка с постером (60×80px), названием, статусом, рейтингом и кнопкой удаления на узких экранах становится перегруженной.
+- **Header (ProfileCard + кнопка выхода):** На мобильных заголовок складывается в колонку, кнопка выхода на всю ширину выглядит оторванной.
+- **Таб-хедеры на 480px:** `flex-direction: column` для tab-header — счётчик переносится под лейбл, высота табов увеличивается.
+
+**Root Cause:** Профиль не получал мобильной адаптации при создании. PTabView PrimeVue по умолчанию не поддерживает scrollable tabs. Stats ProfileCard использует `flex-wrap` без адаптивных брейкпоинтов. AnimeProfileCard не имеет мобильной компактной версии.
+
+**Fix:**
+- Добавить scrollable-режим для PTabView (кастомный CSS с `overflow-x: auto` + flex-shrink: 0 для вкладок)
+- Либо заменить PTabView на кастомные вкладки с horizontal scroll на мобильных
+- ProfileCard stats: переключиться на grid `repeat(auto-fill, minmax(70px, 1fr))` вместо flex-wrap
+- AnimeProfileCard: уменьшить постер до 48×64px на мобильных, убрать или перенести кнопку удаления
+- Компактное расположение кнопки выхода на мобильных
 
 ---
 
@@ -935,7 +1096,7 @@ const seasonOptions = computed(() => {
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через `@nuxt/fonts` (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переработан с hover bridge через `usePopupHover` (HI-2). Dependencies очищены (MI-5, MI-6).
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап требует переписывания без PrimeVue (HI-2). Dependencies очищены (MI-5, MI-6). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка фильтров (HI-18) и профиля (HI-19) требуют доработки.
 
 ### Ключевые архитектурные разрывы
 
@@ -945,9 +1106,9 @@ const seasonOptions = computed(() => {
 | CSS | БЭМ с отдельными файлами | ✅ Стили распределены по компонентам |
 | Роутинг | `/catalog`, `/anime/[id]`, `/favorites`, `/profile` | `/`, `/anime/[id]`, `/login`, `/profile` |
 | Пагинация | Infinite scroll + Paginator | ✅ Load More кнопка (CI-2) |
-| Попап | OverlayPanel desktop / Dialog mobile | ❌ Hover bridge с `usePopupHover` — `offsetHeight` error (HI-2) |
+| Попап | OverlayPanel desktop / Dialog mobile | ❌ Нужен кастомный popup без PrimeVue (HI-2) |
 | UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | ❌ `clamp()` и Button preset реализованы, но grid/player не прошли визуальную проверку (HI-7, HI-9) |
-| Шрифты | Inter в `font-family` | ❌ `@nuxt/fonts` вызывает SSR crash (HI-10) |
+| Шрифты | Inter в `font-family` | ✅ Inter через Google Fonts `app.head.link` (HI-10) |
 
 ### Рекомендованный порядок исправления
 
@@ -963,7 +1124,7 @@ const seasonOptions = computed(() => {
 
 **Phase 2 — Refactoring (декомпозиция монолитов):**
 5. ~~**HIGH** — Вынести `AnimeCard.vue` из index.vue (HI-4)~~ ✅ **Готово**
-6. **HIGH** — Починить OverlayPanel → `AnimePreviewPopup.vue` + `usePopupHover` (HI-2) ❌ **Сломано** — `offsetHeight` error
+6. **HIGH** — Переписать popup без PrimeVue: кастомный `<div>` + CSS-анимация + `usePopupHover` (HI-2) ❌ **Нужен кастомный popup**
 7. ~~**HIGH** — Санитизировать `v-html` (HI-5)~~ ✅ **Готово**
 8. ~~**HIGH** — Декомпозиция остальных компонентов (HI-4 Phase 2)~~ ✅ **Готово**
 9. ~~**HIGH** — Подключить `SkeletonCatalogGrid.vue` в index.vue (HI-11)~~ ✅ **Готово**
@@ -974,11 +1135,17 @@ const seasonOptions = computed(() => {
 12. **HIGH** — UI/визуальный редизайн: кнопки, типографика (HI-7) ❌ **Требует доработки** — grid/player не прошли проверку
 13. ~~**HIGH** — CSS-система: контраст, fluid-типографика, breakpoints (HI-8)~~ ✅ **Готово**
 14. **HIGH** — Spacing/layout: плеер max-width, grid sizing (HI-9) ❌ **Требует доработки** — grid не заполняет экран
-15. **HIGH** — Подключить шрифты: Inter через альтернативный способ (HI-10) ❌ **@nuxt/fonts несовместим**
+15. ~~**HIGH** — Подключить шрифты: Inter через Google Fonts (HI-10)~~ ✅ **Готово**
+16. **HIGH** — Синхронизировать `SkeletonAnimeDetail` с реальным layout страницы (HI-14) ❌ **PENDING**
+17. **HIGH** — Синхронизировать `SkeletonCatalogGrid` с `AnimeCard` — скелетон кривой (HI-15) ❌ **PENDING**
+18. **HIGH** — Убрать дублирование `:header` prop в `PTabPanel` на profile (HI-16) ❌ **PENDING**
+19. **HIGH** — Перевести английский текст на русский (HI-17) ❌ **PENDING**
+20. **HIGH** — Мобильная верстка фильтров на главной (HI-18) ❌ **PENDING**
+21. **HIGH** — Мобильная верстка профиля (HI-19) ❌ **PENDING**
 
 **Phase 4 — Quality (долг):**
-16. **MEDIUM** — Архитектурный долг (MI-1–14) — частично выполнено (MI-5, MI-6, MI-9, MI-13, MI-14)
-17. **LOW** — Косметические фиксы (LI-1–14) — частично выполнено (LI-1, LI-2, LI-3, LI-5, LI-9, LI-10, LI-12, LI-13)
+22. **MEDIUM** — Архитектурный долг (MI-1–14) — частично выполнено (MI-5, MI-6, MI-9, MI-13, MI-14)
+23. **LOW** — Косметические фиксы (LI-1–14) — частично выполнено (LI-1, LI-2, LI-3, LI-5, LI-9, LI-10, LI-12, LI-13)
 
 ### Рекомендации по рефакторингу
 
@@ -997,3 +1164,5 @@ const seasonOptions = computed(() => {
 
 *Последнее обновление: 2026-05-22 — обновлён HI-3 (inline-скрипт + definePreset), архитектурная сводка синхронизирована*
 *Последнее обновление: 2026-05-23 — все HI/LI/MI Phase 2-3 исправления отмечены как RESOLVED; архитектурная сводка обновлена*
+*Последнее обновление: 2026-05-23 — добавлены HI-14–17 (скелетоны, профиль, английский текст)*
+*Последнее обновление: 2026-05-23 — добавлены HI-18 (мобильные фильтры) и HI-19 (мобильный профиль)*
