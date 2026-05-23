@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'add-to-list': [animeId: string, status: UserListStatus]
+  'remove-from-list': [animeId: string]
 }>()
 
 function kindLabel(kind: string): string {
@@ -27,6 +28,16 @@ const cleanDescription = computed(() => {
   const cleaned = stripBBCode(props.anime.description)
   return cleaned.length > 200 ? cleaned.slice(0, 200) + '...' : cleaned
 })
+
+// ── Проброс событий от AnimeListButton ──
+// $event в inline-обработчике Vue передаёт только ПЕРВЫЙ аргумент emit.
+function forwardAddToList(animeId: string, status: UserListStatus) {
+  emit('add-to-list', animeId, status)
+}
+
+function forwardRemoveFromList(animeId: string) {
+  emit('remove-from-list', animeId)
+}
 </script>
 
 <template>
@@ -77,13 +88,14 @@ const cleanDescription = computed(() => {
     </p>
 
     <div class="popup__actions">
-      <PButton
-        :label="isInList ? 'В списке' : 'В список'"
-        :icon="isInList ? 'pi pi-check' : 'pi pi-plus'"
+      <AnimeListButton
+        :anime-id="anime.id.toString()"
+        :is-in-list="isInList"
+        :list-status="listStatus"
         size="small"
-        @click="emit('add-to-list', anime.id, 'planned')"
+        @add-to-list="forwardAddToList"
+        @remove-from-list="forwardRemoveFromList"
       />
-
     </div>
   </div>
 </template>

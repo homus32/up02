@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'add-to-list': [animeId: string, status: UserListStatus]
+  'remove-from-list': [animeId: string]
   navigate: [animeId: string]
   hide: []
   mouseenter: []
@@ -21,6 +22,42 @@ const emit = defineEmits<{
 /** Desktop close button — скрываем попап через emit */
 function closePopup() {
   emit('hide')
+}
+
+// ── Отслеживание открытого дропдауна PSplitButton ──
+// Когда дропдаун PrimeVue открыт (teleport в body), mouseleave на попапе
+// срабатывает при переходе на оверлей. Нужно не закрывать попап, пока
+// дропдаун активен.
+const isOverlayActive = ref(false)
+let overlayObserver: MutationObserver | null = null
+
+onMounted(() => {
+  overlayObserver = new MutationObserver(() => {
+    if (!canShow.value) return // не проверяем DOM, если попап неактивен
+    isOverlayActive.value = !!document.querySelector('.p-tieredmenu')
+  })
+  overlayObserver.observe(document.body, { childList: true, subtree: true })
+})
+
+onUnmounted(() => {
+  overlayObserver?.disconnect()
+})
+
+/** При mouseleave с попапа — не закрываем, если открыт дропдаун */
+function handlePopupMouseLeave() {
+  if (isOverlayActive.value) return
+  emit('mouseleave')
+}
+
+// ── Проброс событий от PopupContent ──
+// Важно: $event в inline-обработчике Vue передаёт только ПЕРВЫЙ аргумент emit.
+// Используем именованные параметры для корректной передачи всех аргументов.
+function forwardAddToList(animeId: string, status: UserListStatus) {
+  emit('add-to-list', animeId, status)
+}
+
+function forwardRemoveFromList(animeId: string) {
+  emit('remove-from-list', animeId)
 }
 
 const isMobile = useMediaQuery('(max-width: 767px)')
@@ -83,7 +120,7 @@ const canShow = computed(() => props.anime && (isMobile.value || props.position)
         :class="['preview-popup', { 'preview-popup_mobile': isMobile }]"
         :style="isMobile ? {} : popupStyle"
         @mouseenter="$emit('mouseenter')"
-        @mouseleave="$emit('mouseleave')"
+        @mouseleave="handlePopupMouseLeave"
       >
         <!-- Mobile bottom sheet header -->
         <div v-if="isMobile" class="preview-popup__handle" />
@@ -103,7 +140,8 @@ const canShow = computed(() => props.anime && (isMobile.value || props.position)
           :anime="anime"
           :is-in-list="isInList"
           :list-status="listStatus"
-          @add-to-list="emit('add-to-list', $event)"
+          @add-to-list="forwardAddToList"
+          @remove-from-list="forwardRemoveFromList"
         />
       </div>
     </Transition>

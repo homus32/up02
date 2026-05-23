@@ -26,7 +26,7 @@ const { visibleAnimes, displayLimit, canLoadMore, loadMoreWithFill } = useCatalo
 )
 
 // === User lists ===
-const { getStatus, isInList, addToList } = useUserLists()
+const { getStatus, isInList, addToList, removeFromList } = useUserLists()
 
 function handlePopupAddToList(animeId: string, status: UserListStatus) {
   const a = selectedAnime.value
@@ -35,6 +35,10 @@ function handlePopupAddToList(animeId: string, status: UserListStatus) {
     status, name: a.name, russian: a.russian,
     posterUrl: a.poster?.mainUrl || null, score: 0, addedAt: Date.now(),
   })
+}
+
+function handlePopupRemoveFromList(animeId: string) {
+  removeFromList(animeId)
 }
 
 // === Hover popup (кастомный, вместо PrimeVue OverlayPanel) ===
@@ -105,6 +109,7 @@ function handlePopupAddToList(animeId: string, status: UserListStatus) {
       :list-status="selectedAnime ? getStatus(String(selectedAnime.id)) : null"
       :position="popupRect"
       @add-to-list="handlePopupAddToList"
+      @remove-from-list="handlePopupRemoveFromList"
       @navigate="(id) => navigateTo(`/anime/${id}`)"
       @mouseenter="onPopupEnter"
       @mouseleave="onPopupLeave"

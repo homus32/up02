@@ -17,6 +17,7 @@ declare module 'vue' {
     PRating: typeof import('primevue/rating')['default']
     PSelect: typeof import('primevue/select')['default']
     PSelectButton: typeof import('primevue/selectbutton')['default']
+    PSplitButton: typeof import('primevue/splitbutton')['default']
     PTabPanel: typeof import('primevue/tabpanel')['default']
     PTabView: typeof import('primevue/tabview')['default']
     PTag: typeof import('primevue/tag')['default']

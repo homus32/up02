@@ -1,5 +1,5 @@
 <template>
-  <div class="player-placeholder player-placeholder__container">
+  <div class="player-placeholder">
     <div class="player-placeholder__inner">
       <i class="pi pi-play-circle player-placeholder__icon" />
       <span class="player-placeholder__text">Видео временно недоступно</span>
@@ -8,11 +8,6 @@
 </template>
 
 <style scoped>
-.player-placeholder__container {
-  max-width: 640px;
-  margin: 0 auto;
-}
-
 .player-placeholder {
   margin-top: var(--space-8);
 }

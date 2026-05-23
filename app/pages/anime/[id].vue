@@ -31,9 +31,6 @@ const { data: anime, status, error, refresh } = useAsyncData<Anime>(
 
       <!-- Player placeholder -->
       <PlayerPlaceholder />
-
-      <!-- Add to list section -->
-      <AnimeDetailLists :anime-id="animeId" :anime="anime" />
     </div>
   </div>
 </template>

@@ -81,18 +81,25 @@ onMounted(async () => {
     </NuxtLink>
 
     <div class="anime-detail-hero__content">
-      <!-- Poster -->
-      <div class="anime-detail-hero__poster">
-        <PImage
-          :src="posterUrl"
-          :alt="anime.russian || anime.name"
-          preview
-          loading="eager"
+      <!-- Left sidebar: poster + actions -->
+      <div class="anime-detail-hero__sidebar">
+        <div class="anime-detail-hero__poster">
+          <PImage
+            :src="posterUrl"
+            :alt="anime.russian || anime.name"
+            preview
+            loading="eager"
+          />
+        </div>
+
+        <AnimeDetailActions
+          :anime-id="props.anime.id.toString()"
+          :anime="props.anime"
         />
       </div>
 
-      <!-- Info -->
-      <div class="anime-detail-hero__info">
+      <!-- Main content -->
+      <div class="anime-detail-hero__main">
         <!-- Title -->
         <h1 class="anime-detail-hero__title">
           {{ anime.russian || anime.name }}
@@ -161,8 +168,8 @@ onMounted(async () => {
           />
           <p v-else class="anime-detail-hero__description-text">{{ anime.description }}</p>
         </div>
-      </div>
-    </div>
+      </div><!-- /.anime-detail-hero__main -->
+    </div><!-- /.anime-detail-hero__content -->
   </div>
 </template>
 
@@ -184,18 +191,32 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-/* Content layout */
+/* Content layout — flex: sidebar (sticky) + main content */
 .anime-detail-hero__content {
-  display: grid;
-  grid-template-columns: 280px 1fr;
+  display: flex;
   gap: var(--space-8);
-  align-items: start;
+  align-items: flex-start;
 }
 
-/* Poster */
+/* Left sidebar: poster + actions */
+.anime-detail-hero__sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Poster — sticky within sidebar */
 .anime-detail-hero__poster {
   position: sticky;
   top: calc(var(--header-height) + var(--space-6));
+}
+
+/* Main content (info) takes remaining width */
+.anime-detail-hero__main {
+  flex: 1;
+  min-width: 0;
 }
 
 .anime-detail-hero__poster :deep(.p-image) {
@@ -211,7 +232,7 @@ onMounted(async () => {
 }
 
 /* Info */
-.anime-detail-hero__info {
+.anime-detail-hero__main {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -340,12 +361,17 @@ onMounted(async () => {
 /* Responsive */
 @media (max-width: 768px) {
   .anime-detail-hero__content {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: var(--space-6);
+  }
+
+  .anime-detail-hero__sidebar {
+    width: 100%;
   }
 
   .anime-detail-hero__poster {
     position: static;
+    max-width: 280px;
   }
 
   .anime-detail-hero__poster :deep(.p-image img) {
