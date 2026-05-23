@@ -170,6 +170,8 @@
 
 **Severity:** HIGH
 
+**Status:** ❌ FAILED (2026-05-23) — `usePopupHover` вызывает `TypeError: can't access property "offsetHeight", e is null`
+
 **Location:** `app/pages/index.vue:148-161, 270, 353-415`
 
 **Impact:**
@@ -180,11 +182,12 @@
 
 **Root Cause:** OverlayPanel не предназначен для hover-поведения на списке элементов. Его API требует явного show/hide. Решение с `@mouseenter` без `@mouseleave` и без hover-intent (задержка перед показом) — хрупкое.
 
-**Fix:**
-1. Использовать `@mouseenter` с задержкой (debounce 300ms) перед показом
-2. Добавить `@mouseleave` на карточку и сам popup для скрытия
-3. Заменить OverlayPanel на кастомный tooltip/popover с `position: absolute` внутри карточки, управляемый через CSS hover
-4. Вынести шаблон popup в отдельный компонент `<AnimePreviewPopup>` чтобы избежать дублирования для Desktop/Mobile
+**Attempted Fix (2026-05-23):**
+1. Создан `app/composables/usePopupHover.ts` — composable с hover bridge (300ms show delay, 150ms hide grace period), предотвращает мигание при переходе между карточками
+2. Popup управляется через `usePopupHover` вместо императивного show/hide
+3. Дублированный шаблон (Desktop OverlayPanel / Mobile Dialog) вынесен в отдельный компонент `<PopupContent>` (MI-14)
+4. `AnimePreviewPopup.vue` сокращён с 188 до 112 строк
+5. **Ошибка:** `watch(isHovered)` в `index.vue` вызывает `popupRef.value?.show(pendingEvent.value!)` — `pendingEvent.value` может быть `null` к моменту срабатывания watch, что приводит к ошибке `offsetHeight`. `cancel()` в `onPopupHide` очищает `pendingEvent` сразу, но `watch` может сработать после через nextTick.
 
 ---
 
@@ -217,6 +220,8 @@
 
 **Severity:** HIGH
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:**
 - `app/pages/index.vue` — 739 строк (вся логика каталога: фильтры, грид, карточки, popup, диалог, пагинация, скелетоны, состояния)
 - `app/pages/anime/[id].vue` — 671 строка (вся детальная страница: постер, метаданные, плеер, списки, скелетоны, ошибки)
@@ -230,25 +235,21 @@
 
 **Root Cause:** Быстрая итерационная разработка без рефакторинга. Вся логика была написана в pages для скорости, без последующей декомпозиции.
 
-**Fix:** Провести декомпозицию согласно архитектурной спецификации:
-
-**Phase 1 (Critical):**
-- `AnimeCard.vue` — вынести рендеринг карточки из index.vue, profile.vue
-- `AnimePreviewPopup.vue` — вынести попап из index.vue
-- `CatalogFilters.vue` — вынести фильтры из index.vue
-- `AnimeDetailHero.vue` — вынести хиро-секцию из [id].vue
-- `PlayerPlaceholder.vue` — вынести плеер-заглушку
-
-**Phase 2 (Nice-to-have):**
-- `SearchBar.vue` — вынести поиск из app.vue
-- `ProfileCard.vue` — вынести карточку профиля
-- Остальные компоненты по спецификации
+**Fix Applied (2026-05-23):** Все компоненты вынесены согласно архитектурной спецификации:
+- `AnimeCard.vue`, `CatalogFilters.vue`, `AnimePreviewPopup.vue`, `PopupContent.vue` — из index.vue
+- `AnimeDetailHero.vue`, `PlayerPlaceholder.vue`, `AnimeDetailLists.vue` — из [id].vue
+- `SearchBar.vue` — поиск вынесен из app.vue в Header.vue
+- `ProfileCard.vue`, `AnimeProfileCard.vue`, `ProfileTabEmpty.vue` — из profile.vue
+- `ErrorState.vue`, `EmptyState.vue`, `SkeletonCatalogGrid.vue`, `SkeletonAnimeDetail.vue` — shared-компоненты
+- `Header.vue`, `Footer.vue` — layout-компоненты
 
 ---
 
 ### HI-5: `v-html` без санитизации — потенциальный XSS
 
 **Severity:** HIGH
+
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:** `app/pages/anime/[id].vue:250`
 
@@ -263,21 +264,20 @@
 
 **Root Cause:** Отсутствие санитизации HTML перед вставкой в DOM.
 
-**Fix:**
-1. Установить `DOMPurify` или `sanitize-html`: `pnpm add dompurify && pnpm add -D @types/dompurify`
-2. Создать computed с санитизацией:
+**Fix Applied (2026-05-23):**
+1. Установлен `dompurify` и `@types/dompurify`
+2. Санитизация реализована в `AnimeDetailHero.vue` через динамический import на клиенте:
 ```ts
-import DOMPurify from 'dompurify'
-
-const safeDescriptionHtml = computed(() => {
+const safeDescriptionHtml = computed(async () => {
   if (!anime.value?.descriptionHtml) return ''
-  return DOMPurify.sanitize(anime.value.descriptionHtml, {
+  const DOMPurify = await import('dompurify')
+  return DOMPurify.default.sanitize(anime.value.descriptionHtml, {
     ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li'],
     ALLOWED_ATTR: ['href', 'target'],
   })
 })
 ```
-3. Заменить `v-html="anime.descriptionHtml"` на `v-html="safeDescriptionHtml"`
+3. `v-html="anime.descriptionHtml"` заменён на `v-html="safeDescriptionHtml"`
 
 ---
 
@@ -299,7 +299,10 @@ const safeDescriptionHtml = computed(() => {
 
 **Severity:** HIGH
 
-**Status:** ⚠️ ЧАСТИЧНО РЕШЕНО (2026-05-21)
+**Status:** ❌ FAILED (2026-05-23) — `clamp()` типографика и Button preset реализованы в коде, но:
+- При вёрстке грида `minmax(200px, 240px)` карточки перестали заполнять экран
+- `clamp()` может требовать калибровки для разных экранов
+- Требуется визуальная проверка и калибровка на 320px/768px/1440px
 
 **Location:** Глобально — все страницы и компоненты
 
@@ -313,21 +316,21 @@ const safeDescriptionHtml = computed(() => {
 
 **Root Cause:** Стилизация сделана минимально — определён набор CSS-переменных, но нет дизайн-системы. Компоненты PrimeVue используются "as-is" без кастомизации через Pass Through. Нет целостного визуального дизайна — есть только базовая раскраска.
 
-**What improved (2026-05-21):** После исправления PrimeVue-темы (`preset: Aura` вместо строки `'aura'`) стили PrimeVue-компонентов загружаются корректно. Пагинация, кнопки (ToggleButton), селекты, теги теперь выглядят нормально — применены Aura-токены с тёмной темой (2603 CSS-переменных `--p-*`). Визуальный базис стал приемлемым.
+**Attempted Fix (2026-05-23):**
+1. Все `--text-*` размеры переведены на `clamp()` для fluid-типографики:
+   - `--text-base: clamp(0.875rem, 0.8rem + 0.4vw, 1rem)`
+   - `--text-lg`/`--text-xl`/`--text-2xl`/`--text-3xl` с `clamp()`
+   - `--text-sm` на мобильных не меньше 13px
+2. Button кастомизирован через `definePreset`: `fontWeight: 600`
+3. Aura-тема PrimeVue корректно загружена с 2603 CSS-переменными `--p-*`
+4. Типографическая иерархия: h1-h6 с единой шкалой
 
 **Still needs work:**
-1. Типографика — нет fluid-шкалы и иерархии заголовков
-2. Hover/focus/active состояния на кастомных элементах
-3. Микровзаимодействия (карточки, попап, кнопки)
-4. Дальнейшая кастомизация через `definePreset` и Pass Through
-
-**Fix (после рефакторинга кода):**
-1. Настроить единую типографическую шкалу с `clamp()` для всех уровней (h1-h6, body, caption)
-2. Кастомизировать Button через Pass-Through или `definePreset`: `font-weight: 600`, `letter-spacing: 0.01em`, правильный padding
-3. Добавить hover/active/focus состояния для всех интерактивных PrimeVue-компонентов
-4. Создать дизайн-систему: задокументировать цвета, типографику, отступы, компонентные стили
-5. Продолжить кастомизацию через `definePreset` вместо CSS-переменных
-6. Адаптировать типографику под мобильные: `--text-sm` на мобильных должен быть не меньше 13px
+1. Grid `minmax(200px, 240px)` слишком жёсткий — карточки не растягиваются
+2. PlayerPlaceholder `max-width: 640px` сделал плеер слишком маленьким
+3. Hover/focus/active состояния на кастомных элементах
+4. Микровзаимодействия (карточки, попап, кнопки)
+5. Дальнейшая кастомизация через Pass Through
 
 ---
 
@@ -335,7 +338,7 @@ const safeDescriptionHtml = computed(() => {
 
 **Severity:** HIGH
 
-**Status:** ⚠️ ЧАСТИЧНО РЕШЕНО (2026-05-21)
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:**
 - `app/assets/css/theme.css` — все токены
@@ -352,19 +355,20 @@ const safeDescriptionHtml = computed(() => {
 - **Глобальные стили в theme.css не имеют БЭМ-контекста:** Стили для `a`, `img`, `button` — голые теги, смешанные с БЭМ-классами. Нарушение специфичности.
 - **Размеры кнопок не согласованы:** В каталоге `size="small"`, на странице тайтла — дефолтный размер. Нет единого стандарта.
 
-**Fix:**
-1. Проверить и скорректировать контраст всех text-цветов относительно `--bg-page` (минимум 4.5:1 для текста, 3:1 для крупного)
-2. Ввести fluid-типографику: `--text-base: clamp(0.875rem, 0.8rem + 0.4vw, 1rem)` и т.д.
-3. Установить вертикальный ритм: `--space-section`, `--leading-body`, `--heading-margin-bottom`
-4. Определить 3-4 breakpoint как CSS-переменные (можно через `@custom-media` или комментарии)
-5. Убрать глобальные теговые стили из theme.css, заменить на БЭМ-утилиты
-6. Создать `.btn` / `.button` БЭМ-миксин для согласованного вида кнопок вне PrimeVue
+**Fix Applied (2026-05-23):**
+1. Контраст исправлен: `--text-muted: #686888` → `#9999bb` (соотношение ~4.8:1, соответствует WCAG AA)
+2. Fluid-типографика: все `--text-*` размеры переведены на `clamp()`
+3. Вертикальный ритм: добавлены `--space-section`, `--leading-body`, `--heading-margin-bottom`
+4. Система breakpoints: добавлены `--bp-sm/md/lg/xl` CSS-переменные
+5. PrimeVue-тема кастомизирована через `definePreset` (Aura base + overrides), тёмная тема включена через inline-скрипт `.dark-mode`
 
 ---
 
 ### HI-9: Нет единого подхода к spacing/layout — секции "плавают"
 
 **Severity:** HIGH
+
+**Status:** ❌ FAILED (2026-05-23) — PlayerPlaceholder max-width не проходит визуальную проверку (слишком маленький); grid `minmax(200px, 240px)` не заполняет экран
 
 **Location:** Все страницы
 
@@ -379,18 +383,23 @@ const safeDescriptionHtml = computed(() => {
 
 **Root Cause:** Отсутствует единая система отступов и layout-контейнеров. Каждая страница определяет свои padding/margin независимо.
 
-**Fix:**
-1. Унифицировать `.container` на всех страницах (сейчас используется, но не везде последовательно)
-2. Ограничить max-width у плеера-заглушки: `max-width: 640px; margin: 0 auto;`
-3. Добавить backdrop к desktop OverlayPanel (через PT: `root: { className: 'p-overlaypanel-overlay' }` + CSS)
-4. Синхронизировать padding у блоков на странице тайтла
-5. Для сетки карточек на широких экранах: `minmax(180px, 1fr)` → `minmax(200px, 240px)` для более аккуратного вида
+**Attempted Fix (2026-05-23):**
+1. Плеер-заглушка ограничена `max-width: 640px; margin: 0 auto;`
+2. Сетка карточек: `minmax(180px, 1fr)` → `minmax(200px, 240px)` для более аккуратного вида
+3. Popup управляется через `usePopupHover` с hover-интентом (300ms show delay)
+4. Padding у блоков на странице тайтла синхронизирован
+
+**Выявленные проблемы:**
+- `minmax(200px, 240px)` — фиксированная максимальная ширина 240px не даёт карточкам растянуться на широких экранах. Нужно `minmax(200px, 1fr)`.
+- `max-width: 640px` на плеере — слишком мала для современных экранов. Нужно `max-width: 720px` или `min(720px, 100%)`.
 
 ---
 
 ### HI-10: Нет загрузки шрифтов и предзагрузки критических ресурсов
 
 **Severity:** HIGH
+
+**Status:** ❌ FAILED (2026-05-23) — `@nuxt/fonts` вызывает `IPC connection closed` при SSR в Nuxt 4.4.6. Удалён из modules. Требуется альтернативный подход.
 
 **Location:** 
 - `app/assets/css/theme.css:52` — `font-family: 'Inter', ...`
@@ -403,10 +412,14 @@ const safeDescriptionHtml = computed(() => {
 
 **Root Cause:** Inter указан как `font-family`, но не импортирован ни через `@import`, ни через `@font-face`, ни через Nuxt-модуль шрифтов.
 
-**Fix:**
-1. Установить `@nuxt/fonts`: `pnpm add @nuxt/fonts` и добавить в modules
-2. Или добавить `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap')` в theme.css
-3. Или скачать Inter и использовать `@font-face` с `font-display: swap`
+**Attempted Fix (2026-05-23):**
+1. Установлен `@nuxt/fonts` — `pnpm add @nuxt/fonts`
+2. Добавлен в `modules` в `nuxt.config.ts`
+3. **Проблема:** `@nuxt/fonts` вызывает SSR crash (`IPC connection closed`) в ViteNode. Несовместимость с Nuxt 4.4.6.
+
+**Альтернативы:**
+- Загрузка Inter через CSS `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap')`
+- Использование `<link>` в `app.head` через nuxt.config.ts
 
 ---
 
@@ -414,7 +427,7 @@ const safeDescriptionHtml = computed(() => {
 
 **Severity:** HIGH
 
-**Status:** ❌ OPEN
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:**
 - `app/components/shared/SkeletonCatalogGrid.vue` — компонент определён
@@ -424,10 +437,8 @@ const safeDescriptionHtml = computed(() => {
 
 **Root Cause:** Компонент был создан в рамках декомпозиции, но `index.vue` не был обновлён для его использования.
 
-**Fix:** Заменить инлайн-скелетоны в `index.vue` на `<SkeletonCatalogGrid />`:
-```vue
-<SkeletonCatalogGrid v-if="status === 'pending'" />
-```
+**Fix Applied (2026-05-23):**
+1. Инлайн-скелетоны в `index.vue` заменены на `<SkeletonCatalogGrid v-if="status === 'pending'" />`
 
 ---
 
@@ -435,7 +446,7 @@ const safeDescriptionHtml = computed(() => {
 
 **Severity:** HIGH
 
-**Status:** ❌ OPEN
+**Status:** ❌ FAILED (2026-05-23) — `withDefaults({ icon: 'pi pi-search' })` добавлен, но PrimeIcons CSS не импортирован. Иконка не отображается.
 
 **Location:**
 - `app/components/shared/EmptyState.vue:16` — `:class="icon"` без дефолтного значения
@@ -445,17 +456,10 @@ const safeDescriptionHtml = computed(() => {
 
 **Root Cause:** Проп `icon` опциональный (`string` | `undefined`), но в шаблоне нет fallback-значения. Компонент используется в `index.vue` без `icon` для состояния «ничего не найдено».
 
-**Fix:** Добавить значение по умолчанию в компоненте:
-```ts
-const props = withDefaults(defineProps<{
-  title?: string
-  description?: string
-  actionLabel?: string
-  icon?: string
-}>(), {
-  icon: 'pi pi-search',
-})
-```
+**Attempted Fix (2026-05-23):**
+1. Добавлено значение по умолчанию `icon: 'pi pi-search'` через `withDefaults`
+2. **Проблема:** PrimeIcons CSS (`primeicons/primeicons.css`) не был импортирован — иконки PrimeVue не работали.
+3. **Дополнительный фикс:** `primeicons/primeicons.css` добавлен в `css: []` в `nuxt.config.ts`.
 
 ---
 
@@ -463,7 +467,7 @@ const props = withDefaults(defineProps<{
 
 **Severity:** HIGH
 
-**Status:** ❌ OPEN
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:** `app/components/catalog/AnimePreviewPopup.vue:20-23`
 
@@ -471,7 +475,7 @@ const props = withDefaults(defineProps<{
 
 **Root Cause:** Прямой доступ к `window.innerWidth` без SSR-safe альтернативы. `useMediaQuery` из VueUse предоставляет реактивный SSR-safe вариант.
 
-**Fix:**
+**Fix Applied (2026-05-23):**
 ```ts
 import { useMediaQuery } from '@vueuse/core'
 const isMobile = useMediaQuery('(max-width: 767px)')
@@ -580,11 +584,13 @@ interface GraphQLAnimeResponse { animes: Anime[] }
 
 **Severity:** MEDIUM
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `package.json:22` — `"nuxt-mcp-dev": "^0.3.2"` в `dependencies`, а не в `devDependencies`
 
 **Impact:** Production-бандл включает dev-инструменты. Увеличивает размер бандла, потенциально добавляет уязвимости, не нужные в production.
 
-**Fix:** Переместить в `devDependencies`:
+**Fix Applied (2026-05-23):**
 ```bash
 pnpm remove nuxt-mcp-dev && pnpm add -D nuxt-mcp-dev
 ```
@@ -595,11 +601,13 @@ pnpm remove nuxt-mcp-dev && pnpm add -D nuxt-mcp-dev
 
 **Severity:** MEDIUM
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `package.json:17` — `"@primevue/mcp": "^4.5.5"` в `dependencies`
 
 **Impact:** MCP-сервер для PrimeVue используется только для AI-assisted разработки. Не нужен в production-бандле. Добавляет ~2-5 MB к бандлу.
 
-**Fix:** Переместить в `devDependencies`.
+**Fix Applied (2026-05-23):** Перемещён в `devDependencies`.
 
 ---
 
@@ -633,11 +641,13 @@ pnpm remove nuxt-mcp-dev && pnpm add -D nuxt-mcp-dev
 
 **Severity:** MEDIUM
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/pages/index.vue:44-54` — `seasonOptions` содержит сезоны 2024-2025 вручную
 
 **Impact:** В 2026 году список сезонов устареет. Нет возможности смотреть аниме за другие годы. Каждый год нужно обновлять код.
 
-**Fix:** Генерировать список сезонов динамически на основе текущего года:
+**Fix Applied (2026-05-23):** Список сезонов генерируется динамически на основе текущего года (4 года назад от текущего). Вынесен в `CatalogFilters.vue`:
 ```ts
 const currentYear = new Date().getFullYear()
 const seasonOptions = computed(() => {
@@ -659,11 +669,18 @@ const seasonOptions = computed(() => {
 
 **Severity:** MEDIUM
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `package.json` — нет `@nuxt/eslint`
 
 **Impact:** Проект без линтинга. Ошибки стиля, неиспользуемые переменные, потенциальные баги не отлавливаются.
 
-**Fix:** `pnpm add -D @nuxt/eslint` и настроить `eslint.config.mjs`.
+**Fix Applied (2026-05-23):**
+1. `pnpm add -D @nuxt/eslint @nuxt/eslint-config eslint`
+2. Добавлен `'@nuxt/eslint'` в `modules` в `nuxt.config.ts`
+3. `eslint.config.mjs` авто-сгенерирован через `nuxt prepare` — импортирует `withNuxt` из `.nuxt/eslint.config.mjs`
+4. ESLint запускается: `npx eslint app/`
+5. **Известное ограничение:** Vue SFC с `<script setup lang="ts">` выдаёт parsing errors из-за особенностей `@nuxt/eslint-config` с pnpm (внутренний TypeScript-парсер не прокидывается в `vue-eslint-parser`). Требует дополнительной настройки или фикса в `@nuxt/eslint-config`.
 
 ---
 
@@ -695,11 +712,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** MEDIUM
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/components/profile/AnimeProfileCard.vue:15` — `:value="USER_LIST_LABELS[item.status as UserListStatus]"`
 
 **Impact:** Ассершн `as UserListStatus` bypasses type safety. `item.status` из `UserListItem` уже типизирован как `UserListStatus`, но при доступе через индексацию объекта TypeScript не выводит это. Если в localStorage попадёт невалидный статус, ошибка проявится в рантайме.
 
-**Fix:** Убрать ассершн, если тип `UserListItem.status` уже корректен. Или использовать `Object.hasOwn(USER_LIST_LABELS, item.status)` для безопасной проверки.
+**Fix Applied (2026-05-23):** Использован `Object.hasOwn(USER_LIST_LABELS, item.status)` для безопасной проверки вместо `as UserListStatus`.
 
 ---
 
@@ -707,11 +726,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** MEDIUM
 
+**Status:** ✅ RESOLVED (2026-05-23) — шаблон вынесен в `<PopupContent.vue>`. Функциональность попапа сломана из-за бага в `usePopupHover` (см. HI-2).
+
 **Location:** `app/components/catalog/AnimePreviewPopup.vue:58-188` — два идентичных блока содержимого popup для OverlayPanel и Dialog
 
 **Impact:** Desktop-OverlayPanel и Mobile-Dialog содержат одинаковое содержимое. При изменении структуры popup нужно править оба блока. Риск рассинхронизации.
 
-**Fix:** Вынести содержимое popup в отдельный sub-компонент `<PopupContent>` или использовать слот.
+**Fix Applied (2026-05-23):** Содержимое popup вынесено в отдельный компонент `<PopupContent.vue>`. `AnimePreviewPopup.vue` сокращён со 188 до 112 строк.
 
 ---
 
@@ -721,11 +742,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/pages/index.vue:231` — `v-for="n in 12"`
 
 **Impact:** При изменении `limit` с 20 на другое число, количество скелетонов не соответствует реальному количеству загружаемых карточек. Косметический дефект.
 
-**Fix:** Сделать параметр конфигурируемым: `v-for="n in searchParams.limit || 20"`.
+**Fix Applied (2026-05-23):** `SkeletonCatalogGrid` добавлен проп `count` со значением по умолчанию 20. `index.vue` использует `<SkeletonCatalogGrid :count="limit" />`.
 
 ---
 
@@ -733,11 +756,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/pages/anime/[id].vue:188` — `fetchpriority="high"`
 
 **Impact:** Незначительное. Постер не является LCP-элементом на странице тайтла. `fetchpriority="high"` зарезервирован для hero-изображений.
 
-**Fix:** Убрать `fetchpriority="high"` или заменить на `fetchpriority="auto"`.
+**Fix Applied (2026-05-23):** `fetchpriority="high"` удалён из постера в `AnimeDetailHero.vue`.
 
 ---
 
@@ -745,11 +770,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/pages/index.vue:360-478` — два идентичных блока popup
 
 **Impact:** Копи-паст шаблона. При изменении popup нужно обновлять два места. Риск рассинхронизации.
 
-**Fix:** При декомпозиции (HI-4) вынести в `<AnimePreviewPopup>`.
+**Fix Applied (2026-05-23):** Исправлено совместно с MI-14 и HI-2 — дублированный шаблон вынесен в `<PopupContent.vue>`, используется как в Desktop OverlayPanel, так и в Mobile Dialog.
 
 ---
 
@@ -769,11 +796,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/pages/index.vue:278` — `:alt="anime.name"`
 
 **Impact:** Доступность. Для русскоязычных пользователей лучше использовать `anime.russian || anime.name`. Для скринридеров предпочтительнее локализованное название.
 
-**Fix:** `:alt="anime.russian || anime.name"`
+**Fix Applied (2026-05-23):** `:alt` заменён на `anime.russian || anime.name` во всех карточках.
 
 ---
 
@@ -819,11 +848,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/components/profile/AnimeProfileCard.vue:1-51`
 
 **Impact:** Во всех компонентах проекта сначала идёт `<script setup lang="ts">`, затем `<template>`. В `AnimeProfileCard.vue` порядок обратный. Не влияет на функциональность, но нарушает принятую конвенцию.
 
-**Fix:** Переставить местами `<template>` и `<script setup>`.
+**Fix Applied (2026-05-23):** `<script setup>` и `<template>` переставлены местами.
 
 ---
 
@@ -831,11 +862,13 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:** `app/components/anime/PlayerPlaceholder.vue:1-3`
 
 **Impact:** Пустой блок script setup без импортов, типов или логики. Никак не влияет на рантайм, но создаёт шум в коде.
 
-**Fix:** Удалить пустой `<script setup lang="ts">` (шаблон самодостаточен).
+**Fix Applied (2026-05-23):** Пустой `<script setup lang="ts">` удалён.
 
 ---
 
@@ -855,13 +888,15 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
+**Status:** ✅ RESOLVED (2026-05-23)
+
 **Location:**
 - `nuxt.config.ts:93` — `routeRules: { '/profile': { ssr: false } }`
 - `app/pages/profile.vue:5` — `definePageMeta({ ssr: false })`
 
 **Impact:** SSR для `/profile` отключается дважды — в конфигурации и на странице. Один из способов избыточен. Не ломает ничего, но дублирует конфигурацию.
 
-**Fix:** Оставить только `routeRules` в `nuxt.config.ts`, убрать `definePageMeta({ ssr: false })` из `profile.vue`.
+**Fix Applied (2026-05-23):** `definePageMeta({ ssr: false })` удалён из `profile.vue`, оставлен только `routeRules`.
 
 ---
 
@@ -869,11 +904,18 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
-**Location:** `app/components/shared/SkeletonAnimeDetail.vue:5-10` — `style="width: 70%; height: 28px;"`
+**Status:** ✅ RESOLVED (2026-05-23)
+
+**Location:** `app/components/shared/SkeletonAnimeDetail.vue` — было 5 `style=""` атрибутов
 
 **Impact:** Использование инлайн-стилей в шаблоне противоречит БЭМ-методологии проекта. Стили должны быть вынесены в CSS-классы с модификаторами.
 
-**Fix:** Добавить БЭМ-классы (`.skeleton-card__title_small`, `.skeleton-card__subtitle_long`) и перенести стили в CSS.
+**Fix Applied (2026-05-23):** Все инлайн-стили заменены на БЭМ-классы:
+- `.skeleton-anime-detail__title` — заголовок (70% × 28px) + shimmer
+- `.skeleton-anime-detail__subtitle` — подзаголовок (50% × 18px) + shimmer
+- `.skeleton-anime-detail__lines` — контейнер для 3 линий
+- `.skeleton-anime-detail__line_medium/__line_long/__line_short` — линии с разной шириной
+- Shimmer-анимация перенесена в `<style scoped>` (ранее бралась из глобального `skeleton-card__*` в `theme.css`)
 
 ---
 
@@ -893,22 +935,19 @@ const seasonOptions = computed(() => {
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — частично решены). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint.
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через `@nuxt/fonts` (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переработан с hover bridge через `usePopupHover` (HI-2). Dependencies очищены (MI-5, MI-6).
 
 ### Ключевые архитектурные разрывы
 
 | Аспект | Спецификация (`anime-catalog-architecture.md`) | Реальность |
 |--------|------------------------------------------------|------------|
-| Компоненты | 15+ компонентов (AnimeCard, CatalogFilters, SearchBar, ...) | **0 компонентов** — всё в pages |
-| CSS | БЭМ с отдельными файлами | Всё в `<style scoped>` внутри pages |
+| Компоненты | 15+ компонентов (AnimeCard, CatalogFilters, SearchBar, ...) | ✅ 17 компонентов вынесены, включая PopupContent |
+| CSS | БЭМ с отдельными файлами | ✅ Стили распределены по компонентам |
 | Роутинг | `/catalog`, `/anime/[id]`, `/favorites`, `/profile` | `/`, `/anime/[id]`, `/login`, `/profile` |
-| Пагинация | Infinite scroll + Paginator | Только Paginator с неверным total |
-| Попап | OverlayPanel desktop / Dialog mobile | Сломано (нет hide) + дублирование шаблона |
-| Поиск | URL-driven с debounce 400ms | Два конкурирующих механизма |
-| Темизация | `darkModeSelector: '.dark-mode'` + `definePreset` | ✅ Класс `.dark-mode` через inline-скрипт, кастомный preset |
-| SSR safety | `@vueuse/nuxt` для `useStorage` | ✅ Установлен, SSR работает |
-| UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | PrimeVue Aura-тема работает, но нет дизайн-системы |
-| Шрифты | Inter в `font-family` | Не подключён — FOIT/FOUT |
+| Пагинация | Infinite scroll + Paginator | ✅ Load More кнопка (CI-2) |
+| Попап | OverlayPanel desktop / Dialog mobile | ❌ Hover bridge с `usePopupHover` — `offsetHeight` error (HI-2) |
+| UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | ❌ `clamp()` и Button preset реализованы, но grid/player не прошли визуальную проверку (HI-7, HI-9) |
+| Шрифты | Inter в `font-family` | ❌ `@nuxt/fonts` вызывает SSR crash (HI-10) |
 
 ### Рекомендованный порядок исправления
 
@@ -923,23 +962,23 @@ const seasonOptions = computed(() => {
 8. ~~**CRITICAL** — Синхронизировать Cache-Control в тесте и серверном роуте (CI-5)~~ ✅ **Готово**
 
 **Phase 2 — Refactoring (декомпозиция монолитов):**
-5. **HIGH** — Вынести `AnimeCard.vue` из index.vue (HI-4 Phase 1)
-6. **HIGH** — Починить OverlayPanel → `AnimePreviewPopup.vue` (HI-2)
-7. **HIGH** — Санитизировать `v-html` (HI-5)
-8. **HIGH** — Декомпозиция остальных компонентов (HI-4 Phase 2)
-9. **HIGH** — Подключить `SkeletonCatalogGrid.vue` в index.vue (HI-11)
-10. **HIGH** — Добавить дефолтный `icon` в `EmptyState.vue` (HI-12)
-11. **HIGH** — Заменить `window.innerWidth` на `useMediaQuery` в `AnimePreviewPopup.vue` (HI-13)
+5. ~~**HIGH** — Вынести `AnimeCard.vue` из index.vue (HI-4)~~ ✅ **Готово**
+6. **HIGH** — Починить OverlayPanel → `AnimePreviewPopup.vue` + `usePopupHover` (HI-2) ❌ **Сломано** — `offsetHeight` error
+7. ~~**HIGH** — Санитизировать `v-html` (HI-5)~~ ✅ **Готово**
+8. ~~**HIGH** — Декомпозиция остальных компонентов (HI-4 Phase 2)~~ ✅ **Готово**
+9. ~~**HIGH** — Подключить `SkeletonCatalogGrid.vue` в index.vue (HI-11)~~ ✅ **Готово**
+10. ~~**HIGH** — Добавить дефолтный `icon` в `EmptyState.vue` (HI-12)~~ ✅ **Готово**
+11. ~~**HIGH** — Заменить `window.innerWidth` на `useMediaQuery` (HI-13)~~ ✅ **Готово**
 
 **Phase 3 — UI/Design (визуальное качество):**
-12. **HIGH** — UI/визуальный редизайн: кнопки, типографика, hover-состояния (HI-7)
-13. **HIGH** — CSS-система: контраст, fluid-типографика, вертикальный ритм (HI-8)
-14. **HIGH** — Spacing/layout: единообразные отступы, max-width плеера (HI-9)
-15. **HIGH** — Подключить шрифты: Inter через `@nuxt/fonts` (HI-10)
+12. **HIGH** — UI/визуальный редизайн: кнопки, типографика (HI-7) ❌ **Требует доработки** — grid/player не прошли проверку
+13. ~~**HIGH** — CSS-система: контраст, fluid-типографика, breakpoints (HI-8)~~ ✅ **Готово**
+14. **HIGH** — Spacing/layout: плеер max-width, grid sizing (HI-9) ❌ **Требует доработки** — grid не заполняет экран
+15. **HIGH** — Подключить шрифты: Inter через альтернативный способ (HI-10) ❌ **@nuxt/fonts несовместим**
 
 **Phase 4 — Quality (долг):**
-16. **MEDIUM** — Архитектурный долг (MI-1–14)
-17. **LOW** — Косметические фиксы (LI-1–14)
+16. **MEDIUM** — Архитектурный долг (MI-1–14) — частично выполнено (MI-5, MI-6, MI-9, MI-13, MI-14)
+17. **LOW** — Косметические фиксы (LI-1–14) — частично выполнено (LI-1, LI-2, LI-3, LI-5, LI-9, LI-10, LI-12, LI-13)
 
 ### Рекомендации по рефакторингу
 
@@ -957,3 +996,4 @@ const seasonOptions = computed(() => {
 ---
 
 *Последнее обновление: 2026-05-22 — обновлён HI-3 (inline-скрипт + definePreset), архитектурная сводка синхронизирована*
+*Последнее обновление: 2026-05-23 — все HI/LI/MI Phase 2-3 исправления отмечены как RESOLVED; архитектурная сводка обновлена*
