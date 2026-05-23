@@ -15,6 +15,8 @@ const { allAnimes, hasMore, loadingMore, loadMore } = useCatalogPagination(
   data, baseParams, (p) => api.search(p),
 )
 
+const { visibleAnimes, displayLimit, disableCap } = useCatalogFillPage(allAnimes)
+
 // === User lists ===
 const { getStatus, isInList, addToList, removeFromList } = useUserLists()
 
@@ -51,15 +53,10 @@ function onPopupHide() { selectedAnime.value = null }
       <CatalogFilters v-model="filterState" @change="onFilterChange" />
 
       <!-- Loading -->
-      <div v-if="allAnimes.length === 0 && status === 'pending'" class="catalog-page__grid">
-        <div v-for="n in 12" :key="n" class="skeleton-card">
-          <div class="skeleton-card__poster" />
-          <div class="skeleton-card__body">
-            <div class="skeleton-card__title" />
-            <div class="skeleton-card__subtitle" />
-          </div>
-        </div>
-      </div>
+      <SkeletonCatalogGrid
+        v-if="allAnimes.length === 0 && status === 'pending'"
+        :count="displayLimit"
+      />
 
       <!-- Error -->
       <ErrorState
@@ -83,7 +80,7 @@ function onPopupHide() { selectedAnime.value = null }
       <template v-else>
         <div class="catalog-page__grid">
           <AnimeCard
-            v-for="anime in allAnimes"
+            v-for="anime in visibleAnimes"
             :key="anime.id"
             :anime="anime"
             :list-status="getStatus(String(anime.id))"
@@ -101,7 +98,7 @@ function onPopupHide() { selectedAnime.value = null }
             severity="secondary"
             outlined
             :loading="loadingMore"
-            @click="loadMore"
+            @click="disableCap(); loadMore()"
           />
         </div>
       </template>

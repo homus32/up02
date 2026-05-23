@@ -30,6 +30,7 @@ export function useCatalogPagination(
   data: Ref<PaginatedResponse | null>,
   baseParams: Ref<SearchParams>,
   searchApi: (params: SearchParams) => Promise<PaginatedResponse>,
+  pageSize: number = 20,
 ) {
   const currentPage = ref(1)
   const loadingMore = ref(false)
@@ -44,7 +45,7 @@ export function useCatalogPagination(
   const hasMore = computed(() =>
     currentPage.value > 1
       ? _lastPageFull.value
-      : (data.value?.data?.length ?? 0) >= 20,
+      : (data.value?.data?.length ?? 0) >= pageSize,
   )
 
   // Reset accumulated results when upstream data changes (new search/filter)
@@ -60,7 +61,7 @@ export function useCatalogPagination(
       const nextPage = currentPage.value + 1
       const result = await searchApi({ ...baseParams.value, page: nextPage })
       additionalAnimes.value = [...additionalAnimes.value, ...result.data]
-      _lastPageFull.value = result.data.length === 20
+      _lastPageFull.value = result.data.length >= pageSize
       currentPage.value = nextPage
     } catch {
       // Silently fail — button still clickable for retry

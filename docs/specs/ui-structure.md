@@ -4,7 +4,7 @@
 
 | # | Страница | Маршрут | Назначение | Ключевые PrimeVue-компоненты |
 |---|----------|---------|------------|------------------------------|
-| 1 | **Каталог** | `/` | Сетка карточек аниме, поиск, фильтры (тип/статус/сезон/сорт.), кнопка «Загрузить ещё» | PSelectButton, PSelect, PButton, PTag, PChip, POverlayPanel, PDialog |
+| 1 | **Каталог** | `/` | Сетка карточек аниме, поиск, фильтры (тип/статус/сезон/сорт.), кнопка «Загрузить ещё», **динамический расчёт количества карточек под экран** | PSelectButton, PSelect, PButton, PTag, PChip, POverlayPanel, PDialog |
 | 2 | **Страница тайтла** | `/anime/[id]` | Постер, информация, плеер-заглушка, добавление в список, оценка | PTag, PRating, PChip, PButton, PSelectButton, PImage |
 | 3 | **Вход** | `/login` | Псевдо-форма логина (любое имя → профиль) | PInputText, PButton |
 | 4 | **Профиль** | `/profile` | Имя пользователя, 5 списков (planned/watching/completed/on_hold/dropped) с карточками, удаление | PTabView, PTabPanel, PButton, PTag |
@@ -29,6 +29,12 @@
 | **EmptyState** | `app/components/shared/EmptyState.vue` | Пустое состояние с иконкой, сообщением и действием | Каталог |
 | **SkeletonCatalogGrid** | `app/components/shared/SkeletonCatalogGrid.vue` | Скелетон-загрузчик сетки карточек (проп `count`, по умолчанию 20) | Каталог |
 | **SkeletonAnimeDetail** | `app/components/shared/SkeletonAnimeDetail.vue` | Скелетон-загрузчик детальной страницы (постер + информация) | Страница тайтла |
+
+## Composables
+
+| Composable | Файл | Назначение |
+|------------|------|------------|
+| **useCatalogFillPage** | `app/composables/useCatalogFillPage.ts` | Динамический расчёт количества карточек для заполнения экрана каталога. Вычисляет колонки (по ширине контейнера) и ряды (по высоте viewport) на клиенте после монтирования. SSR-safe с дефолтом 12 карточек. |
 
 ## Макет (Layout)
 
@@ -67,3 +73,4 @@
 
 *Обновлено после рефакторинга: добавлены Header/Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail; обновлены пути компонентов (feature-based папки).*
 *Обновлено 2026-05-23: PrimeVue-компонентам добавлен префикс `P` (настройка `primevue.components.prefix` в `nuxt.config.ts`).*
+*Обновлено 2026-05-23: добавлен `useCatalogFillPage` для динамического расчёта количества отображаемых карточек.*

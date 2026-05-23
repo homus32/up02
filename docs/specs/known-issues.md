@@ -1,7 +1,7 @@
 # Known Issues (AnimeBaza)
 
 > **Дата аудита:** 2026-05-23  
-> **Последнее обновление:** 2026-05-23 — добавлены HI-18 (мобильные фильтры) и HI-19 (мобильный профиль)
+> **Последнее обновление:** 2026-05-23 — HI-9 resolved: dynamic card count via useCatalogFillPage
 > **Объём:** Все страницы, composables, server routes, конфигурация, типы
 > **Метод:** Полный code review + анализ архитектурных расхождений
 
@@ -373,7 +373,7 @@ const safeDescriptionHtml = computed(async () => {
 
 **Severity:** HIGH
 
-**Status:** ❌ FAILED (2026-05-23) — PlayerPlaceholder max-width не проходит визуальную проверку (слишком маленький); grid `minmax(200px, 240px)` не заполняет экран
+**Status:** ✅ RESOLVED (2026-05-23) — карточки динамически подстраиваются под ширину и высоту экрана через `useCatalogFillPage` composable. Grid оставлен `auto-fill minmax(180px, 1fr)`, количество отображаемых карточек рассчитывается JS на клиенте.
 
 **Location:** Все страницы
 
@@ -388,15 +388,12 @@ const safeDescriptionHtml = computed(async () => {
 
 **Root Cause:** Отсутствует единая система отступов и layout-контейнеров. Каждая страница определяет свои padding/margin независимо.
 
-**Attempted Fix (2026-05-23):**
-1. Плеер-заглушка ограничена `max-width: 640px; margin: 0 auto;`
-2. Сетка карточек: `minmax(180px, 1fr)` → `minmax(200px, 240px)` для более аккуратного вида
-3. Popup управляется через `usePopupHover` с hover-интентом (300ms show delay)
-4. Padding у блоков на странице тайтла синхронизирован
-
-**Выявленные проблемы:**
-- `minmax(200px, 240px)` — фиксированная максимальная ширина 240px не даёт карточкам растянуться на широких экранах. Нужно `minmax(200px, 1fr)`.
-- `max-width: 640px` на плеере — слишком мала для современных экранов. Нужно `max-width: 720px` или `min(720px, 100%)`.
+**Fix Applied (2026-05-23):**
+1. Создан composable `useCatalogFillPage.ts` — вычисляет колонки (по ширине контейнера) и ряды (по высоте viewport) на клиенте через `onMounted`
+2. API всегда загружает 20 карточек, клиент отображает только те, что влезают (`slice(0, displayLimit)`)
+3. SSR-дефолт: 12 карточек (6 колонок × 2 ряда при 1280px@1080p). После гидрации на клиенте пересчитывается под реальный вьюпорт
+4. Кнопка "Загрузить ещё" — снимает `slice()`-лимит, показывает все загруженные карточки
+5. Динамическое количество рядов: от 2 на ноутбуке 1080p до 5+ на 1440p
 
 ---
 
@@ -1096,7 +1093,7 @@ const seasonOptions = computed(() => {
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап требует переписывания без PrimeVue (HI-2). Dependencies очищены (MI-5, MI-6). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка фильтров (HI-18) и профиля (HI-19) требуют доработки.
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап требует переписывания без PrimeVue (HI-2). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка фильтров (HI-18) и профиля (HI-19) требуют доработки.
 
 ### Ключевые архитектурные разрывы
 
@@ -1107,7 +1104,7 @@ const seasonOptions = computed(() => {
 | Роутинг | `/catalog`, `/anime/[id]`, `/favorites`, `/profile` | `/`, `/anime/[id]`, `/login`, `/profile` |
 | Пагинация | Infinite scroll + Paginator | ✅ Load More кнопка (CI-2) |
 | Попап | OverlayPanel desktop / Dialog mobile | ❌ Нужен кастомный popup без PrimeVue (HI-2) |
-| UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | ❌ `clamp()` и Button preset реализованы, но grid/player не прошли визуальную проверку (HI-7, HI-9) |
+| UI/дизайн | Документ концепции (`concept.md`) с визуальным направлением | ✅ `clamp()`, Button preset, динамический fill-page (HI-7, HI-9), плеер требует калибровки |
 | Шрифты | Inter в `font-family` | ✅ Inter через Google Fonts `app.head.link` (HI-10) |
 
 ### Рекомендованный порядок исправления
@@ -1134,7 +1131,7 @@ const seasonOptions = computed(() => {
 **Phase 3 — UI/Design (визуальное качество):**
 12. **HIGH** — UI/визуальный редизайн: кнопки, типографика (HI-7) ❌ **Требует доработки** — grid/player не прошли проверку
 13. ~~**HIGH** — CSS-система: контраст, fluid-типографика, breakpoints (HI-8)~~ ✅ **Готово**
-14. **HIGH** — Spacing/layout: плеер max-width, grid sizing (HI-9) ❌ **Требует доработки** — grid не заполняет экран
+14. ~~**HIGH** — Spacing/layout: плеер max-width, grid sizing (HI-9)~~ ✅ **Готово** — динамический расчёт карточек через `useCatalogFillPage`
 15. ~~**HIGH** — Подключить шрифты: Inter через Google Fonts (HI-10)~~ ✅ **Готово**
 16. **HIGH** — Синхронизировать `SkeletonAnimeDetail` с реальным layout страницы (HI-14) ❌ **PENDING**
 17. **HIGH** — Синхронизировать `SkeletonCatalogGrid` с `AnimeCard` — скелетон кривой (HI-15) ❌ **PENDING**
