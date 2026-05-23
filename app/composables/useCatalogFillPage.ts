@@ -1,6 +1,7 @@
 import type { Ref } from 'vue'
 import type { Anime } from '~/types/anime'
-import { ref, computed, onMounted } from 'vue'
+import type { PaginatedResponse } from '~/composables/useCatalogPagination'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 
 const TARGET_ROWS = 5
@@ -13,11 +14,14 @@ const TARGET_ROWS = 5
  * so the last row never has empty grid cells.
  *
  * @param allAnimes — Ref of the full anime list (including loaded pages)
+ * @param data      — Ref from useAsyncData (SSR-first page). Used to reset
+ *                    displayLimit when filters change.
  * @param hasMore   — Whether the API has more pages (from useCatalogPagination)
  * @param loadMore  — Fetches the next API page and appends to allAnimes
  */
 export function useCatalogFillPage(
   allAnimes: Ref<Anime[]>,
+  data: Ref<PaginatedResponse | null>,
   hasMore: Ref<boolean>,
   loadMore: () => Promise<void>,
 ) {
@@ -27,8 +31,7 @@ export function useCatalogFillPage(
 
   const isMobile = useMediaQuery('(max-width: 767px)')
 
-  // Calculate display limit once on mount
-  onMounted(() => {
+  function recalcLimit() {
     const grid = document.querySelector('.catalog-page__grid') as HTMLElement | null
     if (!grid) return
 
@@ -43,23 +46,27 @@ export function useCatalogFillPage(
     const slots = Math.min(total, target)
     const completeRows = Math.max(1, Math.floor(slots / cols.value))
     displayLimit.value = completeRows * cols.value
+  }
+
+  // Calculate display limit once on mount
+  onMounted(recalcLimit)
+
+  // Reset displayLimit when upstream data changes (new search/filter)
+  watch(data, () => {
+    cols.value = 6
+    displayLimit.value = cols.value * TARGET_ROWS
   })
 
-  // Always shows complete rows only — never an incomplete last row
-  const visibleAnimes = computed(() => {
-    const total = allAnimes.value.length
-    const limit = displayLimit.value
-    const showCount = Math.min(total, limit)
-    const completeRows = Math.max(1, Math.floor(showCount / cols.value))
-    return allAnimes.value.slice(0, completeRows * cols.value)
-  })
+  // Shows cards up to displayLimit
+  const visibleAnimes = computed(() =>
+    allAnimes.value.slice(0, displayLimit.value),
+  )
 
-  // Show Load More button when there are more complete rows to show
-  // or the API has more pages
+  // Show Load More when there are more complete rows to show or API has more
   const canLoadMore = computed(() => {
     const total = allAnimes.value.length
-    const completeRowCards = Math.max(cols.value, Math.floor(total / cols.value) * cols.value)
-    return displayLimit.value < completeRowCards || hasMore.value
+    const totalCompleteCards = Math.max(cols.value, Math.floor(total / cols.value) * cols.value)
+    return displayLimit.value < totalCompleteCards || hasMore.value
   })
 
   // Load More: adds TARGET_ROWS rows (cols × TARGET_ROWS cards)

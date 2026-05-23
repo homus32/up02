@@ -16,7 +16,7 @@ const { allAnimes, hasMore, loadingMore, loadMore } = useCatalogPagination(
 )
 
 const { visibleAnimes, displayLimit, canLoadMore, loadMoreWithFill } = useCatalogFillPage(
-  allAnimes, hasMore, loadMore,
+  allAnimes, data, hasMore, loadMore,
 )
 
 // === User lists ===

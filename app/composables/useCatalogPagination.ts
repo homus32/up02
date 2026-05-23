@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import type { Anime, SearchParams } from '~/types/anime'
 
-interface PaginatedResponse {
+export interface PaginatedResponse {
   data: Anime[]
   meta: {
     total: number
@@ -63,8 +63,8 @@ export function useCatalogPagination(
       additionalAnimes.value = [...additionalAnimes.value, ...result.data]
       _lastPageFull.value = result.data.length > 0 && result.data.length >= pageSize
       currentPage.value = nextPage
-    } catch {
-      // Silently fail — button still clickable for retry
+    } catch (err) {
+      console.error('[useCatalogPagination] loadMore failed:', err)
     } finally {
       loadingMore.value = false
     }
