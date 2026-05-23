@@ -21,6 +21,8 @@
   --accent-cyan: #00d4ff;
   --accent-magenta: #ff2d78;
   --accent-amber: #ffb347;
+  --accent-green: #2ecc71;
+  --accent-danger: #e74c3c;
 
   /* === Status colors (user lists) === */
   --color-planned: #4a90d9;

@@ -140,10 +140,10 @@ function kindLabel(kind: string): string {
   pointer-events: none;
 }
 .anime-card__status-icon_watching {
-  color: var(--accent-green, #4ade80);
+  color: var(--accent-green);
 }
 .anime-card__status-icon_completed {
-  color: var(--accent-green, #4ade80);
+  color: var(--accent-green);
 }
 .anime-card__status-icon_on_hold {
   color: var(--accent-amber);
