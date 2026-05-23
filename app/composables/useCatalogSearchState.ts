@@ -20,7 +20,7 @@ export function useCatalogSearchState() {
     season: selectedSeason.value || undefined,
     score: selectedScore.value || undefined,
     order: (currentSort.value as SearchParams['order']) || 'ranked',
-    limit: 20,
+    limit: 50,
   }))
 
   // === V-model bridge for CatalogFilters ===

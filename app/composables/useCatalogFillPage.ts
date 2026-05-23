@@ -62,9 +62,9 @@ export function useCatalogFillPage(
     return displayLimit.value < completeRowCards || hasMore.value
   })
 
-  // Load More: adds one row (cols cards), fetches API if needed
+  // Load More: adds TARGET_ROWS rows (cols × TARGET_ROWS cards)
   function loadMoreWithFill() {
-    displayLimit.value += cols.value
+    displayLimit.value += cols.value * TARGET_ROWS
     if (displayLimit.value > allAnimes.value.length) {
       loadMore()
     }

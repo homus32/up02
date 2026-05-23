@@ -61,7 +61,7 @@ export function useCatalogPagination(
       const nextPage = currentPage.value + 1
       const result = await searchApi({ ...baseParams.value, page: nextPage })
       additionalAnimes.value = [...additionalAnimes.value, ...result.data]
-      _lastPageFull.value = result.data.length >= pageSize
+      _lastPageFull.value = result.data.length > 0 && result.data.length >= pageSize
       currentPage.value = nextPage
     } catch {
       // Silently fail — button still clickable for retry

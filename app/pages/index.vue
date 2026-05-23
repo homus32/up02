@@ -12,7 +12,7 @@ const { data, status, error, refresh } = useAsyncData(
 )
 
 const { allAnimes, hasMore, loadingMore, loadMore } = useCatalogPagination(
-  data, baseParams, (p) => api.search(p),
+  data, baseParams, (p) => api.search(p), 50,
 )
 
 const { visibleAnimes, displayLimit, canLoadMore, loadMoreWithFill } = useCatalogFillPage(
