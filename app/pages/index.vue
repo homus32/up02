@@ -20,15 +20,8 @@ const { visibleAnimes, displayLimit, canLoadMore, loadMoreWithFill } = useCatalo
 )
 
 // === User lists ===
-const { getStatus, isInList, addToList, removeFromList } = useUserLists()
+const { getStatus, isInList, addToList } = useUserLists()
 
-function handleAddToList(anime: Anime, status: UserListStatus) {
-  addToList(String(anime.id), {
-    status, name: anime.name, russian: anime.russian,
-    posterUrl: anime.poster?.mainUrl || null, score: 0, addedAt: Date.now(),
-  })
-}
-function handleRemoveFromList(animeId: string) { removeFromList(String(animeId)) }
 function handlePopupAddToList(animeId: string, status: UserListStatus) {
   const a = selectedAnime.value
   if (!a) return
@@ -87,8 +80,6 @@ function onPopupHide() { selectedAnime.value = null }
             :anime="anime"
             :list-status="getStatus(String(anime.id))"
             @preview="(e) => showPopup(e, anime)"
-            @add-to-list="(status) => handleAddToList(anime, status)"
-            @remove-from-list="handleRemoveFromList(anime.id)"
           />
         </div>
 

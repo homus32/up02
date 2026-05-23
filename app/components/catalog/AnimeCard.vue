@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Anime, UserListStatus } from '~/types/anime'
-import { USER_LIST_LABELS } from '~/types/anime'
 
 const props = defineProps<{
   anime: Anime
@@ -9,25 +8,19 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   preview: [event: MouseEvent]
-  'add-to-list': [status: UserListStatus]
-  'remove-from-list': []
 }>()
+
+const STATUS_ICONS: Record<UserListStatus, string> = {
+  planned: 'pi pi-bookmark',
+  watching: 'pi pi-play',
+  completed: 'pi pi-check-circle',
+  on_hold: 'pi pi-pause',
+  dropped: 'pi pi-times-circle',
+}
 
 function kindLabel(kind: string): string {
   const map: Record<string, string> = { tv: 'TV', movie: 'Movie', ova: 'OVA', ona: 'ONA', special: 'Special', music: 'Music' }
   return map[kind] || kind
-}
-
-function statusSeverity(status: string): 'info' | 'warn' | 'success' | undefined {
-  if (status === 'anons') return 'info'
-  if (status === 'ongoing') return 'warn'
-  if (status === 'released') return 'success'
-  return undefined
-}
-
-function statusLabel(status: string): string {
-  const labels: Record<string, string> = { ongoing: 'Онгоинг', released: 'Вышел', anons: 'Анонс' }
-  return labels[status] || status
 }
 </script>
 
@@ -37,7 +30,7 @@ function statusLabel(status: string): string {
       <div class="anime-card__poster-wrapper">
         <img
           :src="anime.poster?.mainUrl || '/placeholder-poster.svg'"
-          :alt="anime.name"
+          :alt="anime.russian || anime.name"
           class="anime-card__poster"
           loading="lazy"
         />
@@ -46,6 +39,15 @@ function statusLabel(status: string): string {
           class="anime-card__kind-badge"
           severity="secondary"
         />
+
+        <ClientOnly>
+          <span
+            v-if="listStatus && STATUS_ICONS[listStatus]"
+            :class="['anime-card__status-icon', `anime-card__status-icon_${listStatus}`]"
+          >
+            <i :class="STATUS_ICONS[listStatus]" />
+          </span>
+        </ClientOnly>
       </div>
     </NuxtLink>
 
@@ -54,45 +56,7 @@ function statusLabel(status: string): string {
         <h3 class="anime-card__title">{{ anime.russian || anime.name }}</h3>
       </NuxtLink>
 
-      <div class="anime-card__meta">
-        <PTag
-          v-if="anime.status"
-          :value="statusLabel(anime.status)"
-          :severity="statusSeverity(anime.status)"
-          class="anime-card__status-badge"
-        />
-        <span v-if="anime.score" class="anime-card__score">
-          <i class="pi pi-star"></i> {{ anime.score.toFixed(1) }}
-        </span>
-      </div>
-
-      <ClientOnly>
-        <div class="anime-card__actions">
-          <div v-if="listStatus" class="anime-card__actions-inline">
-            <PTag
-              :value="USER_LIST_LABELS[listStatus]"
-              :class="`tag-${listStatus}`"
-              class="anime-card__list-badge"
-            />
-            <PButton
-              icon="pi pi-trash"
-              severity="danger"
-              text
-              rounded
-              size="small"
-              @click.stop="emit('remove-from-list')"
-            />
-          </div>
-          <PButton
-            v-else
-            label="В список"
-            icon="pi pi-plus"
-            size="small"
-            outlined
-            @click.stop="emit('add-to-list', 'planned')"
-          />
-        </div>
-      </ClientOnly>
+      <span class="anime-card__year">{{ anime.airedOn?.year ?? '—' }}</span>
     </div>
   </div>
 </template>
@@ -151,32 +115,40 @@ function statusLabel(status: string): string {
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   line-height: var(--leading-tight);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
-.anime-card__meta {
+.anime-card__year {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.anime-card__status-icon {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg-page) 80%, transparent);
+  font-size: var(--text-sm);
+  color: var(--accent-cyan);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
 }
-.anime-card__score {
-  font-size: var(--text-xs);
+.anime-card__status-icon_watching {
+  color: var(--accent-green, #4ade80);
+}
+.anime-card__status-icon_completed {
+  color: var(--accent-green, #4ade80);
+}
+.anime-card__status-icon_on_hold {
   color: var(--accent-amber);
-  display: flex;
-  align-items: center;
-  gap: 2px;
 }
-.anime-card__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: auto;
-  padding-top: var(--space-2);
-}
-.anime-card__list-badge {
-  font-size: var(--text-xs);
+.anime-card__status-icon_dropped {
+  color: var(--accent-danger);
 }
 </style>

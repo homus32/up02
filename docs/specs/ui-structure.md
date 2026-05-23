@@ -15,7 +15,7 @@
 |-----------|------|------------|------------------|
 | **Header** | `app/components/layout/Header.vue` | Layout: шапка (лого + навигация + поиск), NuxtPage, подвал | Все страницы |
 | **Footer** | `app/components/layout/Footer.vue` | Подвал с копирайтом | Все страницы |
-| **AnimeCard** | `app/components/catalog/AnimeCard.vue` | Карточка аниме (постер, название, теги, рейтинг, кнопка «В список»/«Удалить») | Каталог |
+| **AnimeCard** | `app/components/catalog/AnimeCard.vue` | Карточка аниме (постер, kind-бейдж, иконка статуса просмотра, название, год) | Каталог |
 | **CatalogFilters** | `app/components/catalog/CatalogFilters.vue` | Фильтры (тип, статус, сезон, сортировка), v-model | Каталог |
 | **AnimePreviewPopup** | `app/components/catalog/AnimePreviewPopup.vue` | Всплывающий попап с деталями (OverlayPanel десктоп / Dialog мобильные) | Каталог |
 | **PopupContent** | `app/components/catalog/PopupContent.vue` | Содержимое попапа (извлечено из AnimePreviewPopup для устранения дублирования Desktop/Mobile) | AnimePreviewPopup |
@@ -74,3 +74,4 @@
 *Обновлено после рефакторинга: добавлены Header/Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail; обновлены пути компонентов (feature-based папки).*
 *Обновлено 2026-05-23: PrimeVue-компонентам добавлен префикс `P` (настройка `primevue.components.prefix` в `nuxt.config.ts`).*
 *Обновлено 2026-05-23: добавлен `useCatalogFillPage` для динамического расчёта количества отображаемых карточек.*
+*Обновлено 2026-05-23: AnimeCard — убраны рейтинг, статус аниме, кнопка «В список»/«Удалить». Добавлены: год, иконка статуса просмотра на постере, название в одну строку с троеточием.*
