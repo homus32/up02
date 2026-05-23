@@ -53,8 +53,10 @@ export function useCatalogFillPage(allAnimes: Ref<Anime[]>) {
     const pagePaddingTop = 24 // var(--space-6) ≈ 24px
     const availableHeight = window.innerHeight - headerHeight - filtersHeight - pagePaddingTop
 
-    // How many rows fit?
-    const rows = Math.max(1, Math.floor((availableHeight + gap) / (cardHeight + gap)))
+    // How many rows fit? Use round (not floor) so partial rows count.
+    // Minimum 2 rows to avoid looking empty.
+    const idealRows = Math.round((availableHeight + gap) / (cardHeight + gap))
+    const rows = Math.max(2, idealRows)
 
     displayLimit.value = cols * rows
   })
