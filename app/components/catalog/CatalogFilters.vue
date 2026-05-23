@@ -39,17 +39,19 @@ const sortOptions = [
   { label: 'По эпизодам', value: 'episodes' },
 ]
 
-const seasonOptions = [
-  { label: 'Все сезоны', value: '' },
-  { label: 'Зима 2025', value: 'winter_2025' },
-  { label: 'Весна 2025', value: 'spring_2025' },
-  { label: 'Лето 2025', value: 'summer_2025' },
-  { label: 'Осень 2025', value: 'autumn_2025' },
-  { label: 'Зима 2024', value: 'winter_2024' },
-  { label: 'Весна 2024', value: 'spring_2024' },
-  { label: 'Лето 2024', value: 'summer_2024' },
-  { label: 'Осень 2024', value: 'autumn_2024' },
-]
+const seasons = ['winter', 'spring', 'summer', 'autumn'] as const
+const seasonLabels: Record<string, string> = { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень' }
+const currentYear = new Date().getFullYear()
+
+const seasonOptions = computed(() => {
+  const options: { label: string; value: string }[] = [{ label: 'Все сезоны', value: '' }]
+  for (let year = currentYear; year >= currentYear - 3; year--) {
+    for (const season of seasons) {
+      options.push({ label: `${seasonLabels[season]} ${year}`, value: `${season}_${year}` })
+    }
+  }
+  return options
+})
 
 function update(field: keyof CatalogFiltersState, value: string) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-defineProps<{
+withDefaults(defineProps<{
   icon?: string
   title: string
   message: string
   actionLabel?: string
-}>()
+}>(), {
+  icon: 'pi pi-search',
+})
 
 defineEmits<{
   action: []

@@ -1,6 +1,14 @@
+<script setup lang="ts">
+withDefaults(defineProps<{
+  count?: number
+}>(), {
+  count: 20,
+})
+</script>
+
 <template>
   <div class="skeleton-catalog-grid">
-    <div v-for="n in 12" :key="n" class="skeleton-card">
+    <div v-for="n in count" :key="n" class="skeleton-card">
       <div class="skeleton-card__poster" />
       <div class="skeleton-card__body">
         <div class="skeleton-card__title" />
