@@ -28,6 +28,8 @@
 - **Nuxt 4** (v4.4.6), Vue 3, Vue Router 5, TypeScript
 - **Vite**, **SSR** (режим по умолчанию)
 - **Vanilla CSS** — БЭМ (BEM), CSS custom properties, компонентные CSS-файлы
+- **PrimeVue 4** (Aura theme, компоненты с префиксом `P`)
+- **Inter** через `@nuxt/fonts` (font-display: swap)
 
 ## Цель проекта
 
@@ -46,7 +48,7 @@ app/
       [id].vue     # детальная страница тайтла
   components/      # переиспользуемые Vue-компоненты (feature-based)
     layout/        # Header.vue, Footer.vue
-    catalog/       # AnimeCard.vue, AnimePreviewPopup.vue, CatalogFilters.vue
+    catalog/       # AnimeCard.vue, AnimePreviewPopup.vue, PopupContent.vue, CatalogFilters.vue
     anime/         # AnimeDetailHero.vue, AnimeDetailLists.vue, PlayerPlaceholder.vue
     profile/       # ProfileCard.vue, AnimeProfileCard.vue, ProfileTabEmpty.vue
     shared/        # ErrorState.vue, EmptyState.vue, SkeletonCatalogGrid.vue, SkeletonAnimeDetail.vue
@@ -57,6 +59,7 @@ app/
     useHeaderSearch.ts
     useCatalogSearchState.ts
     useCatalogPagination.ts
+    usePopupHover.ts
   types/           # TypeScript-типы
     anime.ts
 public/            # статика (favicon и т.д.)
