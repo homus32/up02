@@ -15,7 +15,9 @@ const { allAnimes, hasMore, loadingMore, loadMore } = useCatalogPagination(
   data, baseParams, (p) => api.search(p),
 )
 
-const { visibleAnimes, displayLimit, disableCap } = useCatalogFillPage(allAnimes)
+const { visibleAnimes, displayLimit, canLoadMore, loadMoreWithFill } = useCatalogFillPage(
+  allAnimes, hasMore, loadMore,
+)
 
 // === User lists ===
 const { getStatus, isInList, addToList, removeFromList } = useUserLists()
@@ -91,14 +93,14 @@ function onPopupHide() { selectedAnime.value = null }
         </div>
 
         <!-- Load More -->
-        <div v-if="hasMore" class="catalog-page__load-more">
+        <div v-if="canLoadMore" class="catalog-page__load-more">
           <PButton
             label="Загрузить ещё"
             icon="pi pi-chevron-down"
             severity="secondary"
             outlined
             :loading="loadingMore"
-            @click="disableCap(); loadMore()"
+            @click="loadMoreWithFill"
           />
         </div>
       </template>

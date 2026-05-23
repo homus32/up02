@@ -3,28 +3,28 @@ import type { Anime } from '~/types/anime'
 import { ref, computed, onMounted } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 
+const TARGET_ROWS = 5
+
 /**
  * Dynamically calculates how many anime cards fit in the visible viewport
- * on the catalog page. SSR-safe — uses a default of 12 cards for initial render.
+ * on the catalog page. SSR-safe — uses a default of 30 cards (6 cols × 5 rows).
  *
- * On mount (client only), measures:
- *  - grid container width
- *  - header height + filters height
- *  - viewport height
- *  — and computes cols × rows to fill the page without scrolling.
+ * Always shows complete rows only (displayLimit is always a multiple of cols),
+ * so the last row never has empty grid cells.
  *
  * @param allAnimes — Ref of the full anime list (including loaded pages)
- * @returns displayLimit  — computed card count fitting the viewport
- *          visibleAnimes — sliced list (or full list when cap is disabled)
- *          cappedMode    — whether the slice cap is active
- *          disableCap    — call to remove the cap (e.g. on "Load More")
+ * @param hasMore   — Whether the API has more pages (from useCatalogPagination)
+ * @param loadMore  — Fetches the next API page and appends to allAnimes
  */
-export function useCatalogFillPage(allAnimes: Ref<Anime[]>) {
-  // SSR-safe default: 12 cards (6 cols × 2 rows at 1280px@1080p)
-  const displayLimit = ref(12)
-  const cappedMode = ref(true)
+export function useCatalogFillPage(
+  allAnimes: Ref<Anime[]>,
+  hasMore: Ref<boolean>,
+  loadMore: () => Promise<void>,
+) {
+  // SSR-safe defaults: 6 cols × 5 rows = 30 cards at 1280px
+  const cols = ref(6)
+  const displayLimit = ref(cols.value * TARGET_ROWS)
 
-  // useMediaQuery is SSR-safe — returns false on server, real value on client
   const isMobile = useMediaQuery('(max-width: 767px)')
 
   // Calculate display limit once on mount
@@ -36,41 +36,39 @@ export function useCatalogFillPage(allAnimes: Ref<Anime[]>) {
     const minCardWidth = isMobile.value ? 140 : 180
     const gap = isMobile.value ? 12 : 20
 
-    // How many columns fit?
-    const cols = Math.max(1, Math.floor((gridWidth + gap) / (minCardWidth + gap)))
+    cols.value = Math.max(1, Math.floor((gridWidth + gap) / (minCardWidth + gap)))
 
-    // Estimate card height: poster (3:4 ratio) + body (~130px)
-    const cardWidth = (gridWidth - (cols - 1) * gap) / cols
-    const cardHeight = cardWidth * (4 / 3) + 130
-
-    // Measure actual DOM heights for header and filters
-    const headerEl = document.querySelector('.header') as HTMLElement | null
-    const headerHeight = headerEl?.offsetHeight ?? 64
-
-    const filtersEl = document.querySelector('.catalog-page__inner > :first-child') as HTMLElement | null
-    const filtersHeight = filtersEl?.getBoundingClientRect().height ?? 48
-
-    const pagePaddingTop = 24 // var(--space-6) ≈ 24px
-    const availableHeight = window.innerHeight - headerHeight - filtersHeight - pagePaddingTop
-
-    // How many rows fit? Use round (not floor) so partial rows count.
-    // Minimum 2 rows to avoid looking empty.
-    const idealRows = Math.round((availableHeight + gap) / (cardHeight + gap))
-    const rows = Math.max(2, idealRows)
-
-    displayLimit.value = cols * rows
+    const target = cols.value * TARGET_ROWS
+    const total = allAnimes.value.length
+    const slots = Math.min(total, target)
+    const completeRows = Math.max(1, Math.floor(slots / cols.value))
+    displayLimit.value = completeRows * cols.value
   })
 
-  // Computed that slices to displayLimit while capped
+  // Always shows complete rows only — never an incomplete last row
   const visibleAnimes = computed(() => {
-    if (!cappedMode.value) return allAnimes.value
-    return allAnimes.value.slice(0, displayLimit.value)
+    const total = allAnimes.value.length
+    const limit = displayLimit.value
+    const showCount = Math.min(total, limit)
+    const completeRows = Math.max(1, Math.floor(showCount / cols.value))
+    return allAnimes.value.slice(0, completeRows * cols.value)
   })
 
-  // Disable the cap — called by "Load More"
-  function disableCap() {
-    cappedMode.value = false
+  // Show Load More button when there are more complete rows to show
+  // or the API has more pages
+  const canLoadMore = computed(() => {
+    const total = allAnimes.value.length
+    const completeRowCards = Math.max(cols.value, Math.floor(total / cols.value) * cols.value)
+    return displayLimit.value < completeRowCards || hasMore.value
+  })
+
+  // Load More: adds one row (cols cards), fetches API if needed
+  function loadMoreWithFill() {
+    displayLimit.value += cols.value
+    if (displayLimit.value > allAnimes.value.length) {
+      loadMore()
+    }
   }
 
-  return { displayLimit, visibleAnimes, cappedMode, disableCap }
+  return { displayLimit, visibleAnimes, cols, canLoadMore, loadMoreWithFill }
 }
