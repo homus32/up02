@@ -46,6 +46,13 @@ const AnimeBazaPreset = definePreset(Aura, {
         },
       },
     },
+    button: {
+      root: {
+        label: {
+          fontWeight: '600',
+        },
+      },
+    },
   },
 })
 
@@ -59,7 +66,7 @@ export default defineNuxtConfig({
 
   modules: ['@primevue/nuxt-module', '@vueuse/nuxt', 'nuxt-mcp-dev'],
 
-  css: ['~/assets/css/theme.css'],
+  css: ['~/assets/css/theme.css', 'primeicons/primeicons.css'],
 
   app: {
     head: {
