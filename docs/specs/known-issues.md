@@ -446,7 +446,7 @@ const safeDescriptionHtml = computed(async () => {
 
 **Severity:** HIGH
 
-**Status:** ❌ FAILED (2026-05-23) — `withDefaults({ icon: 'pi pi-search' })` добавлен, но PrimeIcons CSS не импортирован. Иконка не отображается.
+**Status:** ✅ RESOLVED (2026-05-23)
 
 **Location:**
 - `app/components/shared/EmptyState.vue:16` — `:class="icon"` без дефолтного значения
@@ -456,10 +456,9 @@ const safeDescriptionHtml = computed(async () => {
 
 **Root Cause:** Проп `icon` опциональный (`string` | `undefined`), но в шаблоне нет fallback-значения. Компонент используется в `index.vue` без `icon` для состояния «ничего не найдено».
 
-**Attempted Fix (2026-05-23):**
+**Fix Applied (2026-05-23):**
 1. Добавлено значение по умолчанию `icon: 'pi pi-search'` через `withDefaults`
-2. **Проблема:** PrimeIcons CSS (`primeicons/primeicons.css`) не был импортирован — иконки PrimeVue не работали.
-3. **Дополнительный фикс:** `primeicons/primeicons.css` добавлен в `css: []` в `nuxt.config.ts`.
+2. `primeicons/primeicons.css` добавлен в `css: []` в `nuxt.config.ts`
 
 ---
 
@@ -467,7 +466,7 @@ const safeDescriptionHtml = computed(async () => {
 
 **Severity:** HIGH
 
-**Status:** ✅ RESOLVED (2026-05-23)
+**Status:** ❌ FAILED (2026-05-23) — фикс был откачен вместе с popup-изменениями (git checkout). AnimePreviewPopup.vue снова использует `window.innerWidth`.
 
 **Location:** `app/components/catalog/AnimePreviewPopup.vue:20-23`
 
@@ -475,11 +474,12 @@ const safeDescriptionHtml = computed(async () => {
 
 **Root Cause:** Прямой доступ к `window.innerWidth` без SSR-safe альтернативы. `useMediaQuery` из VueUse предоставляет реактивный SSR-safe вариант.
 
-**Fix Applied (2026-05-23):**
+**Attempted Fix (2026-05-23):**
 ```ts
 import { useMediaQuery } from '@vueuse/core'
 const isMobile = useMediaQuery('(max-width: 767px)')
 ```
+**Откачен** 2026-05-23 вместе с HI-2 (popup переделка). Требует повторного применения.
 
 ---
 
