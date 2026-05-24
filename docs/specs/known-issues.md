@@ -593,28 +593,23 @@ const isMobile = useMediaQuery('(max-width: 767px)')
 
 **Severity:** HIGH
 
-**Status:** ❌ PENDING
+**Status:** ✅ RESOLVED (2026-05-24)
 
 **Location:**
-- `app/components/catalog/CatalogFilters.vue:82-130` — шаблон фильтров
-- `app/components/catalog/CatalogFilters.vue:159-168` — мобильные стили
-- `app/pages/index.vue:51` — `<CatalogFilters v-model="filterState" />`
+- `app/components/catalog/CatalogFilters.vue` — весь компонент
 
-**Impact:** На мобильных экранах (<768px) фильтры выглядят неаккуратно:
-- **PSelectButton (Тип)** — 6 опций (Все, TV, Movie, OVA, ONA, Special) рендерятся в одну строку. На экране <480px кнопки переполняют контейнер, текст обрезается или кнопки переносятся на новую строку с разрывом.
-- **PSelectButton (Статус)** — 4 опции (Все, Онгоинг, Вышел, Анонс). На мобильных ширина каждой кнопки становится слишком маленькой для читаемого текста.
-- **PSelect (Сезон/Сортировка)** — на мобильных раскрывающиеся списки занимают всю ширину, раздувая фильтры.
-- **Общий лейаут**: На мобильных фильтры складываются в колонку (`flex-direction: column`), но сами контролы не адаптированы — SelectButton пытается уместить все опции горизонтально даже на 320px.
-- **Отсутствует scrollable-режим** для SelectButton на мобильных.
+**Root Cause:** Кастомный CSS для мобильной версии менял только `flex-direction` на `column`, но не сбрасывал `align-items: flex-end` (наследовалось из десктопного стиля). На мобилке с колоночным флексом `align-items` управляет горизонтальным выравниванием — все группы прижимались к правому краю. Сезон и Сортировка были отдельными строками вместо одной.
 
-**Root Cause:** Кастомный CSS для мобильной версии меняет только направление флекс-контейнера, но не адаптирует сами PrimeVue-компоненты под узкие экраны. Нет horizontal scroll для SelectButton, нет замены на dropdown, нет ограничений ширины.
+**Fix Applied (2026-05-24):**
+1. Добавлен `align-items: stretch` в мобильный media-query — группы растягиваются на всю ширину и выравниваются по левому краю
+2. Сезон и Сортировка обёрнуты в `catalog-filters__row` — на мобилке контейнер становится `display: flex; flex-direction: row`, дочерние группы получают `flex: 1` и стоят рядом на одной строке
+3. PSelectButton для Типа (6 опций) и Статуса (4 опции) заменён на PSelect (dropdown) на мобилке через `useMediaQuery('(max-width: 767px)')` — больше не переполняют экран
 
-**Fix:**
-- Добавить horizontal scroll для SelectButton на мобильных (`overflow-x: auto` + `white-space: nowrap`)
-- Либо заменить SelectButton на PSelect (dropdown) на мобильных для Типа и Статуса
-- Уменьшить gap между фильтрами на мобильных
-- Ограничить `max-width` для PSelect на мобильных
-- Рассмотреть collapsible-фильтры (скрывать за кнопкой «Фильтры» на мобильных)
+**Fix Applied (2026-05-24) — Iteration 3 (SSR flash + PSelect padding):**
+4. `v-if="isMobile"`/`v-else` заменён на CSS-only show/hide: оба компонента (PSelect и PSelectButton) всегда в DOM, переключение через `.catalog-filters__mobile-only` / `.catalog-filters__desktop-only` с `display: none/block` в media-query. Нет SSR-флеша, нет hydration mismatch.
+5. Удалён импорт `useMediaQuery` — больше не нужен для переключения.
+6. Добавлен `{{ min-height: 42px }}` на `.catalog-filters__select` для стабильной высоты.
+7. Добавлен `:deep(.p-select-label) { padding-block: 10px }` на мобилке — PSelect root padding = 0, текст не прижат.
 
 ---
 
@@ -1101,7 +1096,7 @@ const seasonOptions = computed(() => {
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переписан на кастомный `<div>` вместо PrimeVue OverlayPanel (HI-2/HI-13). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка фильтров (HI-18) и профиля (HI-19) требуют доработки.
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переписан на кастомный `<div>` вместо PrimeVue OverlayPanel (HI-2/HI-13). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Добавлены новые проблемы: скелетоны не синхронизированы с layout (HI-14, HI-15), дублирование header в профиле (HI-16), английский текст (HI-17). Мобильная верстка профиля (HI-19) требует доработки. Мобильная верстка фильтров (HI-18) — исправлена.
 
 ### Ключевые архитектурные разрывы
 
@@ -1145,7 +1140,7 @@ const seasonOptions = computed(() => {
 17. **HIGH** — Синхронизировать `SkeletonCatalogGrid` с `AnimeCard` — скелетон кривой (HI-15) ❌ **PENDING**
 18. **HIGH** — Убрать дублирование `:header` prop в `PTabPanel` на profile (HI-16) ❌ **PENDING**
 19. **HIGH** — Перевести английский текст на русский (HI-17) ❌ **PENDING**
-20. **HIGH** — Мобильная верстка фильтров на главной (HI-18) ❌ **PENDING**
+20. ~~**HIGH** — Мобильная верстка фильтров на главной (HI-18)~~ ✅ **Готово**
 21. **HIGH** — Мобильная верстка профиля (HI-19) ❌ **PENDING**
 
 **Phase 4 — Quality (долг):**
@@ -1171,4 +1166,5 @@ const seasonOptions = computed(() => {
 *Последнее обновление: 2026-05-23 — все HI/LI/MI Phase 2-3 исправления отмечены как RESOLVED; архитектурная сводка обновлена*
 *Последнее обновление: 2026-05-23 — добавлены HI-14–17 (скелетоны, профиль, английский текст)*
 *Последнее обновление: 2026-05-23 — добавлены HI-18 (мобильные фильтры) и HI-19 (мобильный профиль)*
-*Последнее обновление: 2026-05-23 — HI-2/HI-13 resolved: кастомный popup (position: fixed) + usePopupHover вместо POverlayPanel/PDialog*
+*Последнее обновление: 2026-05-23 — HI-2/HI-13 resolved: кастомный popup (position: fixed) + usePopupHover вместо POverlayPanel/PDialog
+*Последнее обновление: 2026-05-24 — HI-18 resolved (iterations 1-3): мобильная верстка фильтров (CatalogFilters) — выравнивание по левому краю + Сезон/Сортировка на одной строке + CSS-only show/hide для PSelect/PSelectButton без SSR-флеша*
