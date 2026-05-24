@@ -16,7 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const kindOptions = [
-  { label: 'Все', value: '' },
+  { label: 'Все', value: 'all' },
   { label: 'TV', value: 'tv' },
   { label: 'Movie', value: 'movie' },
   { label: 'OVA', value: 'ova' },
@@ -25,7 +25,7 @@ const kindOptions = [
 ]
 
 const statusOptions = [
-  { label: 'Все', value: '' },
+  { label: 'Все', value: 'all' },
   { label: 'Онгоинг', value: 'ongoing' },
   { label: 'Вышел', value: 'released' },
   { label: 'Анонс', value: 'anons' },
@@ -44,7 +44,7 @@ const seasonLabels: Record<string, string> = { winter: 'Зима', spring: 'Ве
 const currentYear = new Date().getFullYear()
 
 const seasonOptions = computed(() => {
-  const options: { label: string; value: string }[] = [{ label: 'Все сезоны', value: '' }]
+  const options: { label: string; value: string }[] = [{ label: 'Все сезоны', value: 'all' }]
   for (let year = currentYear; year >= currentYear - 3; year--) {
     for (const season of seasons) {
       options.push({ label: `${seasonLabels[season]} ${year}`, value: `${season}_${year}` })
@@ -81,50 +81,79 @@ const currentSort = computed({
 
 <template>
   <div class="catalog-filters">
+    <!-- Тип -->
     <div class="catalog-filters__group">
       <label class="catalog-filters__label">Тип</label>
-      <PSelectButton
-        v-model="selectedKind"
-        :options="kindOptions"
-        option-label="label"
-        option-value="value"
-        :allow-empty="false"
-        class="catalog-filters__select"
-      />
+      <div class="catalog-filters__mobile-only">
+        <PSelect
+          v-model="selectedKind"
+          :options="kindOptions"
+          option-label="label"
+          option-value="value"
+          fluid
+          class="catalog-filters__select"
+        />
+      </div>
+      <div class="catalog-filters__desktop-only">
+        <PSelectButton
+          v-model="selectedKind"
+          :options="kindOptions"
+          option-label="label"
+          option-value="value"
+          :allow-empty="false"
+          class="catalog-filters__select"
+        />
+      </div>
     </div>
 
+    <!-- Статус -->
     <div class="catalog-filters__group">
       <label class="catalog-filters__label">Статус</label>
-      <PSelectButton
-        v-model="selectedStatus"
-        :options="statusOptions"
-        option-label="label"
-        option-value="value"
-        :allow-empty="false"
-        class="catalog-filters__select"
-      />
+      <div class="catalog-filters__mobile-only">
+        <PSelect
+          v-model="selectedStatus"
+          :options="statusOptions"
+          option-label="label"
+          option-value="value"
+          fluid
+          class="catalog-filters__select"
+        />
+      </div>
+      <div class="catalog-filters__desktop-only">
+        <PSelectButton
+          v-model="selectedStatus"
+          :options="statusOptions"
+          option-label="label"
+          option-value="value"
+          :allow-empty="false"
+          class="catalog-filters__select"
+        />
+      </div>
     </div>
 
-    <div class="catalog-filters__group catalog-filters__group_small">
-      <label class="catalog-filters__label">Сезон</label>
-      <PSelect
-        v-model="selectedSeason"
-        :options="seasonOptions"
-        option-label="label"
-        option-value="value"
-        class="catalog-filters__select"
-      />
-    </div>
+    <!-- Сезон + Сортировка -->
+    <div class="catalog-filters__row">
+      <div class="catalog-filters__group catalog-filters__group_small">
+        <label class="catalog-filters__label">Сезон</label>
+        <PSelect
+          v-model="selectedSeason"
+          :options="seasonOptions"
+          option-label="label"
+          option-value="value"
+          class="catalog-filters__select catalog-filters__select--season"
+        />
+      </div>
 
-    <div class="catalog-filters__group catalog-filters__group_small">
-      <label class="catalog-filters__label">Сортировка</label>
-      <PSelect
-        v-model="currentSort"
-        :options="sortOptions"
-        option-label="label"
-        option-value="value"
-        class="catalog-filters__select"
-      />
+      <div class="catalog-filters__group catalog-filters__group_small">
+        <label class="catalog-filters__label">Сортировка</label>
+        <PSelect
+          v-model="currentSort"
+          :options="sortOptions"
+          option-label="label"
+          option-value="value"
+          class="catalog-filters__select catalog-filters__select--sort"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -148,6 +177,10 @@ const currentSort = computed({
   min-width: 140px;
 }
 
+.catalog-filters__row {
+  display: contents;
+}
+
 .catalog-filters__label {
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
@@ -156,14 +189,52 @@ const currentSort = computed({
   letter-spacing: 0.5px;
 }
 
-@media (max-width: 768px) {
+/* CSS-only mobile/desktop switch — no v-if, no SSR flash */
+.catalog-filters__mobile-only {
+  display: none;
+}
+
+.catalog-filters__desktop-only {
+  display: block;
+}
+
+/* PSelect has root padding: 0 by default, compensate */
+.catalog-filters__select {
+  min-height: 42px;
+}
+
+@media (max-width: 767px) {
   .catalog-filters {
     flex-direction: column;
     gap: var(--space-3);
+    align-items: stretch;
+  }
+
+  .catalog-filters__mobile-only {
+    display: block;
+  }
+
+  .catalog-filters__desktop-only {
+    display: none;
+  }
+
+  .catalog-filters__row {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-3);
+  }
+
+  .catalog-filters__row .catalog-filters__group {
+    flex: 1;
   }
 
   .catalog-filters__group_small {
     min-width: auto;
+  }
+
+  /* PSelect root padding fix on mobile — inner label has 8px 12px, root padding is 0 */
+  .catalog-filters__select :deep(.p-select-label) {
+    padding-block: 10px;
   }
 }
 </style>

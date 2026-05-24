@@ -6,18 +6,18 @@ export function useCatalogSearchState() {
 
   // === URL-driven search state ===
   const searchQuery = ref((route.query.search as string) || '')
-  const selectedKind = ref((route.query.kind as string) || '')
-  const selectedStatus = ref((route.query.status as string) || '')
-  const selectedSeason = ref((route.query.season as string) || '')
+  const selectedKind = ref((route.query.kind as string) || 'all')
+  const selectedStatus = ref((route.query.status as string) || 'all')
+  const selectedSeason = ref((route.query.season as string) || 'all')
   const selectedScore = ref(Number(route.query.score) || 0)
   const currentSort = ref((route.query.order as string) || 'ranked')
 
   // === Build search params ===
   const baseParams = computed<SearchParams>(() => ({
     query: searchQuery.value || undefined,
-    kind: (selectedKind.value as SearchParams['kind']) || undefined,
-    status: (selectedStatus.value as SearchParams['status']) || undefined,
-    season: selectedSeason.value || undefined,
+    kind: selectedKind.value !== 'all' ? (selectedKind.value as SearchParams['kind']) : undefined,
+    status: selectedStatus.value !== 'all' ? (selectedStatus.value as SearchParams['status']) : undefined,
+        season: selectedSeason.value !== 'all' ? selectedSeason.value : undefined,
     score: selectedScore.value || undefined,
     order: (currentSort.value as SearchParams['order']) || 'ranked',
     limit: 50,
@@ -41,9 +41,9 @@ export function useCatalogSearchState() {
     router.replace({
       query: {
         search: searchQuery.value || undefined,
-        kind: selectedKind.value || undefined,
-        status: selectedStatus.value || undefined,
-        season: selectedSeason.value || undefined,
+        kind: selectedKind.value !== 'all' ? selectedKind.value : undefined,
+        status: selectedStatus.value !== 'all' ? selectedStatus.value : undefined,
+    season: selectedSeason.value !== 'all' ? selectedSeason.value : undefined,
         score: selectedScore.value || undefined,
         order: currentSort.value || undefined,
       },

@@ -10,10 +10,8 @@ declare module 'vue' {
   export interface GlobalComponents {
     PButton: typeof import('primevue/button')['default']
     PChip: typeof import('primevue/chip')['default']
-    PDialog: typeof import('primevue/dialog')['default']
     PImage: typeof import('primevue/image')['default']
     PInputText: typeof import('primevue/inputtext')['default']
-    POverlayPanel: typeof import('primevue/overlaypanel')['default']
     PRating: typeof import('primevue/rating')['default']
     PSelect: typeof import('primevue/select')['default']
     PSelectButton: typeof import('primevue/selectbutton')['default']
