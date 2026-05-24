@@ -1,7 +1,7 @@
 import { readonly } from 'vue'
 import { useStorage } from '@vueuse/core'
 import type { UserListStatus, UserListItem, AnimeLists, AnimeRatings } from '~/types/anime'
-import { USER_LIST_STATUSES } from '~/types/anime'
+import { USER_LIST_STATUSES, normalizeItem } from '~/types/anime'
 
 const LISTS_KEY = 'anime_lists'
 const RATINGS_KEY = 'anime_ratings'
@@ -10,8 +10,8 @@ export function useUserLists() {
   const lists = useStorage<AnimeLists>(LISTS_KEY, {})
   const ratings = useStorage<AnimeRatings>(RATINGS_KEY, {})
 
-  function addToList(animeId: string, item: UserListItem) {
-    lists.value = { ...lists.value, [animeId]: item }
+  function addToList(animeId: string, item: Omit<UserListItem, 'addedAt'> & Partial<Pick<UserListItem, 'kind' | 'animeStatus' | 'episodes' | 'airedOnYear'>>) {
+    lists.value = { ...lists.value, [animeId]: normalizeItem(item as UserListItem) }
   }
 
   function removeFromList(animeId: string) {
@@ -34,13 +34,14 @@ export function useUserLists() {
   }
 
   function getItem(animeId: string): UserListItem | null {
-    return lists.value[animeId] ?? null
+    const item = lists.value[animeId]
+    return item ? normalizeItem(item) : null
   }
 
-  function getByStatus(status: UserListStatus): [string, UserListItem][] {
-    return Object.entries(lists.value).filter(
-      ([, item]) => item.status === status,
-    )
+  function getByStatus(status: UserListStatus): Array<{ id: string } & UserListItem> {
+    return Object.entries(lists.value)
+      .filter(([, item]) => item.status === status)
+      .map(([id, item]) => ({ id, ...normalizeItem(item) }))
   }
 
   function isInList(animeId: string): boolean {

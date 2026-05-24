@@ -24,7 +24,7 @@ function handleAddToList(animeId: string, status: UserListStatus) {
     russian: props.anime.russian,
     posterUrl: posterUrl.value || null,
     score: 0,
-    addedAt: Date.now(),
+    kind: props.anime.kind, animeStatus: props.anime.status, episodes: props.anime.episodes, airedOnYear: props.anime.airedOn?.year,
   }
   addToList(animeId, item)
 }

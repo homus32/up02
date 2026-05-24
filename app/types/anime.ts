@@ -81,6 +81,26 @@ export interface UserListItem {
   posterUrl: string | null
   score: number
   addedAt: number
+  kind?: AnimeKind
+  animeStatus?: AnimeStatus
+  episodes?: number
+  airedOnYear?: number
+}
+
+/** Normalize a partial UserListItem with sensible defaults for backward compatibility */
+export function normalizeItem(item: Partial<UserListItem>): UserListItem {
+  return {
+    status: item.status ?? 'planned',
+    name: item.name ?? '',
+    russian: item.russian ?? '',
+    posterUrl: item.posterUrl ?? null,
+    score: item.score ?? 0,
+    addedAt: item.addedAt ?? Date.now(),
+    kind: item.kind ?? 'tv',
+    animeStatus: item.animeStatus ?? 'released',
+    episodes: item.episodes ?? 0,
+    airedOnYear: item.airedOnYear ?? undefined,
+  }
 }
 
 /** localStorage key: anime_lists — Record<animeId, UserListItem> */

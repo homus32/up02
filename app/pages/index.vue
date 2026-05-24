@@ -33,7 +33,8 @@ function handlePopupAddToList(animeId: string, status: UserListStatus) {
   if (!a) return
   addToList(animeId, {
     status, name: a.name, russian: a.russian,
-    posterUrl: a.poster?.mainUrl || null, score: 0, addedAt: Date.now(),
+    posterUrl: a.poster?.mainUrl || null, score: 0,
+    kind: a.kind, animeStatus: a.status, episodes: a.episodes, airedOnYear: a.airedOn?.year,
   })
 }
 
