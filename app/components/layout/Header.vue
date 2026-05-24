@@ -13,6 +13,7 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
 
       <nav class="header__nav">
         <NuxtLink to="/" class="header__link" :class="{ 'header__link_active': route.path === '/' }">
+          <i class="pi pi-th-large header__link-icon" aria-hidden="true"></i>
           Каталог
         </NuxtLink>
         <NuxtLink
@@ -21,6 +22,7 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
           class="header__link"
           :class="{ 'header__link_active': route.path === '/profile' }"
         >
+          <i class="pi pi-user header__link-icon" aria-hidden="true"></i>
           {{ username }}
         </NuxtLink>
         <NuxtLink
@@ -29,6 +31,7 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
           class="header__link"
           :class="{ 'header__link_active': route.path === '/login' }"
         >
+          <i class="pi pi-user header__link-icon" aria-hidden="true"></i>
           Войти
         </NuxtLink>
       </nav>
@@ -36,6 +39,7 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
       <div class="header__search">
         <form @submit.prevent="onSearchSubmit" class="header__search-form">
           <div class="header__search-wrapper">
+            <i class="pi pi-search header__search-icon" aria-hidden="true"></i>
             <input
               v-model="searchQuery"
               type="search"
@@ -97,6 +101,9 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
 }
 
 .header__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-secondary);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
@@ -104,6 +111,10 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
   padding: var(--space-2) var(--space-3);
   border-radius: var(--border-radius-md);
   transition: all var(--transition-fast);
+}
+
+.header__link-icon {
+  font-size: 0.9rem;
 }
 
 .header__link:hover {
@@ -114,6 +125,7 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
 
 .header__link_active {
   color: var(--accent-cyan);
+  background: rgba(0, 200, 255, 0.08);
 }
 
 .header__search {
@@ -129,6 +141,16 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
 .header__search-wrapper {
   position: relative;
   width: 100%;
+}
+
+.header__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
 }
 
 .header__search-clear {
@@ -153,7 +175,7 @@ const { searchQuery, onSearchSubmit } = useHeaderSearch()
 
 .header__search-input {
   width: 100%;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-4) var(--space-2) calc(var(--space-4) + 22px);
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
