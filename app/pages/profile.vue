@@ -4,7 +4,7 @@ import type { UserListStatus } from '~/types/anime'
 
 const router = useRouter()
 const { isLoggedIn, username, logout } = useAuth()
-const { getByStatus, removeFromList, getListStats } = useUserLists()
+const { getByStatus, removeFromList, getListStats, clearAll } = useUserLists()
 
 onMounted(() => {
   if (!isLoggedIn.value) router.replace('/login')
@@ -14,6 +14,7 @@ const stats = computed(() => getListStats())
 const totalAnime = computed(() => Object.values(stats.value).reduce<number>((a, b) => a + b, 0))
 
 function handleLogout() {
+  clearAll()
   logout()
   router.push('/login')
 }
@@ -30,15 +31,18 @@ function handleRemove(animeId: string) {
         :username="username || ''"
         :total-anime="totalAnime"
         :lists-count="stats"
-      />
-      <PButton
-        icon="pi pi-sign-out"
-        label="Выйти"
-        severity="secondary"
-        outlined
-        size="small"
-        @click="handleLogout"
-      />
+      >
+        <template #actions>
+          <PButton
+            icon="pi pi-sign-out"
+            label="Выйти"
+            severity="secondary"
+            outlined
+            size="small"
+            @click="handleLogout"
+          />
+        </template>
+      </ProfileCard>
     </div>
 
     <div class="profile-page__content container">
@@ -47,7 +51,6 @@ function handleRemove(animeId: string) {
           v-for="status in USER_LIST_STATUSES"
           :key="status"
           :value="status"
-          :header="USER_LIST_LABELS[status]"
         >
           <template #header>
             <span class="profile-page__tab-header">
@@ -88,7 +91,7 @@ function handleRemove(animeId: string) {
 
 .profile-page__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: var(--space-8) var(--space-6);
 }
@@ -125,11 +128,11 @@ function handleRemove(animeId: string) {
 /* Mobile */
 @media (max-width: 768px) {
   .profile-page__header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
     gap: var(--space-4);
     padding: var(--space-6);
   }
+
 }
 
 @media (max-width: 480px) {

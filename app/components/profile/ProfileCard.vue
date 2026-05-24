@@ -19,6 +19,7 @@ defineProps<{
         <h1 class="profile-card__username">{{ username }}</h1>
         <p class="profile-card__total">Всего аниме: {{ totalAnime }}</p>
       </div>
+      <slot name="actions" />
     </div>
     <div class="profile-card__stats">
       <div
@@ -38,13 +39,20 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  width: 100%;
 }
 
 .profile-card__header {
   display: flex;
   flex-direction: row;
   gap: var(--space-4);
-  align-items: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.profile-card__header :deep(.p-button) {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .profile-card__avatar {

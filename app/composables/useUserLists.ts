@@ -55,13 +55,20 @@ export function useUserLists() {
     return ratings.value[animeId] ?? 0
   }
 
+  function clearAll() {
+    lists.value = {}
+    ratings.value = {}
+  }
+
   function getListStats(): Record<UserListStatus, number> {
     const stats = {} as Record<UserListStatus, number>
     for (const s of USER_LIST_STATUSES) {
       stats[s] = 0
     }
     for (const item of Object.values(lists.value)) {
-      stats[item.status]++
+      if (item.status in stats) {
+        stats[item.status as UserListStatus]++
+      }
     }
     return stats
   }
@@ -76,6 +83,7 @@ export function useUserLists() {
     getItem,
     getByStatus,
     isInList,
+    clearAll,
     setRating,
     getRating,
     getListStats,

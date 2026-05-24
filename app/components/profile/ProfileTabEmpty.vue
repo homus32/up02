@@ -1,9 +1,9 @@
 <template>
   <div class="profile-tab-empty">
     <i class="pi pi-inbox profile-tab-empty__icon" />
-    <p class="profile-tab-empty__text">Nothing here yet</p>
+    <p class="profile-tab-empty__text">Здесь пока ничего нет</p>
     <NuxtLink to="/" class="profile-tab-empty__link">
-      Browse catalog
+      Перейти в каталог
     </NuxtLink>
   </div>
 </template>
