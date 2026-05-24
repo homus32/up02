@@ -21,10 +21,10 @@
 | **PopupContent** | `app/components/catalog/PopupContent.vue` | Содержимое попапа (извлечено из AnimePreviewPopup для устранения дублирования Desktop/Mobile) | AnimePreviewPopup |
 | **AnimeDetailHero** | `app/components/anime/AnimeDetailHero.vue` | Постер, заголовок, метаданные, жанры, описание (v-html санитизация) | Страница тайтла |
 | **PlayerPlaceholder** | `app/components/anime/PlayerPlaceholder.vue` | Плеер-заглушка (иконка + «Видео временно недоступно») | Страница тайтла |
-| **AnimeDetailLists** | `app/components/anime/AnimeDetailLists.vue` | Добавление в список / оценка (ClientOnly, useUserLists) | Страница тайтла |
+| **AnimeDetailActions** | `app/components/anime/AnimeDetailActions.vue` | Добавление в список (AnimeListButton) + рейтинг 1–10 (PRating, 10 звёзд) через useUserLists; блок рейтинга виден только когда аниме добавлено в список | Страница тайтла |
 | **ProfileCard** | `app/components/profile/ProfileCard.vue` | Аватар, имя пользователя, статистика по спискам | Профиль |
 | **ProfileTabEmpty** | `app/components/profile/ProfileTabEmpty.vue` | Пустое состояние вкладки списка | Профиль |
-| **ProfileAnimeSection** | `app/components/profile/ProfileAnimeSection.vue` | Collapsible-секция списка аниме: PDataTable (десктоп, 5 колонок) / карточки (мобильные), hover-попап через pt.bodyRow + onCardMouseEnter | Профиль |
+| **ProfileAnimeSection** | `app/components/profile/ProfileAnimeSection.vue` | Collapsible-секция списка аниме: PDataTable (десктоп, 4 колонки: #, аниме, моя оценка, тип) / карточки (мобильные), hover-попап через pt.bodyRow + onCardMouseEnter; проп `ratings` для отображения пользовательской оценки 1–10 | Профиль |
 | **ErrorState** | `app/components/shared/ErrorState.vue` | Состояние ошибки с иконкой, сообщением и кнопкой повтора | Каталог, Страница тайтла |
 | **EmptyState** | `app/components/shared/EmptyState.vue` | Пустое состояние с иконкой, сообщением и действием | Каталог |
 | **SkeletonCatalogGrid** | `app/components/shared/SkeletonCatalogGrid.vue` | Скелетон-загрузчик сетки карточек (проп `count`, по умолчанию 20) | Каталог |
@@ -70,6 +70,10 @@
 | Профиль `/profile` | ❌ ssr: false | localStorage + ClientOnly |
 
 ---
+
+*Последнее обновление: 2026-05-26*
+
+*Обновлено 2026-05-26: AnimeDetailActions — добавлена пользовательская оценка 1–10 (PRating с 10 звёздами), отображается только когда аниме добавлено в список. AnimeDetailLists → AnimeDetailActions (переименование в коде).*
 
 *Последнее обновление: 2026-05-25*
 

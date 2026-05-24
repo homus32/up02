@@ -18,8 +18,6 @@ declare module 'vue' {
     PSelect: typeof import('primevue/select')['default']
     PSelectButton: typeof import('primevue/selectbutton')['default']
     PSplitButton: typeof import('primevue/splitbutton')['default']
-    PTabPanel: typeof import('primevue/tabpanel')['default']
-    PTabView: typeof import('primevue/tabview')['default']
     PTag: typeof import('primevue/tag')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

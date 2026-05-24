@@ -7,6 +7,7 @@ interface Props {
   status: UserListStatus
   items: Array<{ id: string } & UserListItem>
   total: number
+  ratings?: Record<string, number>
   defaultOpen?: boolean
   hoverProps: {
     onCardEnter: (anime: Anime, event: MouseEvent) => void
@@ -149,9 +150,9 @@ function onCardMouseEnter(item: RowItem, event: MouseEvent) {
           </div>
         </div>
       </PColumn>
-      <PColumn header="Оценка" #body="slotProps">
-        <span :class="{ 'profile-section__rating-empty': !(slotProps.data.score > 0) }">
-          {{ slotProps.data.score > 0 ? slotProps.data.score : '—' }}
+      <PColumn header="Моя оценка" #body="slotProps">
+        <span :class="{ 'profile-section__rating-empty': !(ratings?.[slotProps.data.id]) }">
+          {{ ratings?.[slotProps.data.id] ? ratings[slotProps.data.id] + '/10' : '—' }}
         </span>
       </PColumn>
       <PColumn header="Тип" #body="slotProps">
@@ -184,8 +185,8 @@ function onCardMouseEnter(item: RowItem, event: MouseEvent) {
               {{ item.russian || item.name }}
             </span>
             <span class="profile-section__card-meta">
-              <span v-if="item.score > 0" class="profile-section__card-rating">
-                <i class="pi pi-star" /> {{ item.score }}
+              <span v-if="ratings?.[item.id]" class="profile-section__card-rating">
+                <i class="pi pi-star-fill" /> {{ ratings[item.id] }}/10
               </span>
               <span class="profile-section__card-kind">{{ kindLabel(item.kind) }}</span>
             </span>

@@ -7,6 +7,7 @@ const { isLoggedIn, username, logout } = useAuth()
 const {
   getByStatus, removeFromList, updateStatus,
   getListStats, isInList, getStatus, clearAll,
+  ratings,
 } = useUserLists()
 const {
   onCardEnter: onCardEnterOriginal, onCardLeave,
@@ -102,6 +103,7 @@ async function handleCardEnter(anime: Anime, event: MouseEvent) {
           :status="status"
           :items="getByStatus(status)"
           :total="stats[status] ?? 0"
+          :ratings="ratings"
           :default-open="true"
           :hover-props="{ onCardEnter: handleCardEnter, onCardLeave }"
         />
