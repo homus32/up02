@@ -198,19 +198,15 @@ onMounted(async () => {
   align-items: flex-start;
 }
 
-/* Left sidebar: poster + actions */
+/* Left sidebar: poster + actions — sticky container */
 .anime-detail-hero__sidebar {
-  width: 280px;
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+  width: 320px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-/* Poster — sticky within sidebar */
-.anime-detail-hero__poster {
-  position: sticky;
-  top: calc(var(--header-height) + var(--space-6));
 }
 
 /* Main content (info) takes remaining width */
@@ -219,7 +215,13 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.anime-detail-hero__poster {
+  width: 100%;
+}
+
 .anime-detail-hero__poster :deep(.p-image) {
+  display: block;
+  width: 100%;
   border-radius: var(--border-radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
@@ -366,12 +368,13 @@ onMounted(async () => {
   }
 
   .anime-detail-hero__sidebar {
+    position: static;
     width: 100%;
   }
 
   .anime-detail-hero__poster {
-    position: static;
     max-width: 280px;
+    margin: 0 auto;
   }
 
   .anime-detail-hero__poster :deep(.p-image img) {
