@@ -188,21 +188,24 @@ describe('getByStatus', () => {
     expect(watching).toHaveLength(2)
 
     // First item has the flat shape: { id, ...UserListItem }
-    expect(watching[0]).toHaveProperty('id')
-    expect(watching[0].id).toBe('1')
-    expect(watching[0].name).toBe('Naruto')
-    expect(watching[0].russian).toBe('Наруто')
-    expect(watching[0].score).toBe(8)
+    const firstWatching = watching[0]!
+    expect(firstWatching).toHaveProperty('id')
+    expect(firstWatching.id).toBe('1')
+    expect(firstWatching.name).toBe('Naruto')
+    expect(firstWatching.russian).toBe('Наруто')
+    expect(firstWatching.score).toBe(8)
 
     // Second item
-    expect(watching[1].id).toBe('2')
-    expect(watching[1].name).toBe('Bleach')
+    const secondWatching = watching[1]!
+    expect(secondWatching.id).toBe('2')
+    expect(secondWatching.name).toBe('Bleach')
 
     // Other status unaffected
     const planned = getByStatus('planned')
     expect(planned).toHaveLength(1)
-    expect(planned[0].id).toBe('3')
-    expect(planned[0].name).toBe('One Piece')
+    const firstPlanned = planned[0]!
+    expect(firstPlanned.id).toBe('3')
+    expect(firstPlanned.name).toBe('One Piece')
   })
 
   it('returns empty array when no items match status', async () => {

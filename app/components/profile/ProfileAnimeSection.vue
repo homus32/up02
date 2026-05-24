@@ -24,7 +24,6 @@ const props = withDefaults(defineProps<Props>(), {
 const isOpen = ref(props.defaultOpen)
 const isMobile = useMediaQuery('(max-width: 767px)')
 
-/** Whether there are items to display */
 const hasItems = computed(() => props.total > 0)
 
 function toggleOpen() {

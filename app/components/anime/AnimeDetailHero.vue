@@ -21,7 +21,10 @@ const displayScore = computed(() => {
 const seasonDisplay = computed(() => {
   if (!props.anime.season) return null
   const season = props.anime.season
-  const [seasonName, year] = season.split('_')
+  const parts = season.split('_')
+  const seasonName = parts[0]
+  const year = parts[1]
+  if (!seasonName || !year) return season
   const seasonMap: Record<string, string> = {
     winter: 'Зима',
     spring: 'Весна',
@@ -34,7 +37,7 @@ const seasonDisplay = computed(() => {
 // Studio name
 const studioName = computed(() => {
   if (!props.anime.studios?.length) return null
-  return props.anime.studios[0].name
+  return props.anime.studios[0]?.name ?? null
 })
 
 // Kind badge severity

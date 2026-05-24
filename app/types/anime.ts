@@ -53,8 +53,6 @@ export interface Studio {
   name: string
 }
 
-// === User Lists (localStorage) ===
-
 export type UserListStatus = 'planned' | 'watching' | 'completed' | 'on_hold' | 'dropped'
 
 export const USER_LIST_STATUSES: UserListStatus[] = [
@@ -73,7 +71,6 @@ export const USER_LIST_LABELS: Record<UserListStatus, string> = {
   dropped: 'Брошено',
 }
 
-/** Per-anime user list item storing display data + status */
 export interface UserListItem {
   status: UserListStatus
   name: string
@@ -109,14 +106,12 @@ export type AnimeLists = Record<string, UserListItem>
 /** Per-anime user rating (0-10, 0 = not rated) — localStorage key: anime_ratings */
 export type AnimeRatings = Record<string, number>
 
-// === Auth (localStorage, not sessionStorage — persists across tabs) ===
+// Auth: localStorage (persists across tabs)
 
 export interface UserProfile {
   username: string
   loggedInAt: string
 }
-
-// === API Response Wrappers ===
 
 export interface PaginatedResult<T> {
   data: T[]
@@ -126,8 +121,6 @@ export interface PaginatedResult<T> {
     limit: number
   }
 }
-
-// === Search / Filter Params ===
 
 export interface SearchParams {
   query?: string

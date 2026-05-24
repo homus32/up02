@@ -18,12 +18,10 @@ describe('useAnimeDetailCache', () => {
 
     mockFetch.mockResolvedValue(anime)
 
-    // Act — first call fetches from API
     const result1 = await cache.get('1')
     expect(result1).toEqual(anime)
     expect(mockFetch).toHaveBeenCalledTimes(1)
 
-    // Act — second call should hit cache, not fetch
     mockFetch.mockReset()
     const result2 = await cache.get('1')
     expect(result2).toEqual(anime)
@@ -51,14 +49,11 @@ describe('useAnimeDetailCache', () => {
     const promise1 = cache.get('1')
     const promise2 = cache.get('1')
 
-    // Resolve the shared fetch promise
     resolveFetch(anime)
 
-    // Assert — both resolves receive the same data
     await expect(promise1).resolves.toEqual(anime)
     await expect(promise2).resolves.toEqual(anime)
 
-    // $fetch should only be called once
     expect(fetchCount).toBe(1)
   })
 
@@ -71,20 +66,16 @@ describe('useAnimeDetailCache', () => {
     // Arrange — first call fails
     mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-    // Act & Assert — first call throws
     await expect(cache.get('1')).rejects.toThrow('Network error')
 
     // Cache should not contain the failed entry
     expect(cache.getCached('1')).toBeNull()
 
-    // Arrange — second call succeeds
     const anime = { id: '1', name: 'Naruto' }
     mockFetch.mockResolvedValueOnce(anime)
 
-    // Act — retry
     const result = await cache.get('1')
 
-    // Assert — fresh fetch was made, cache now has data
     expect(result).toEqual(anime)
     expect(mockFetch).toHaveBeenCalledTimes(2)
   })

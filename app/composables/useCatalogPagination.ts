@@ -27,7 +27,7 @@ export interface PaginatedResponse {
  *          loadMore     — Action to fetch the next page and append it
  */
 export function useCatalogPagination(
-  data: Ref<PaginatedResponse | null>,
+  data: Ref<PaginatedResponse | null | undefined>,
   baseParams: Ref<SearchParams>,
   searchApi: (params: SearchParams) => Promise<PaginatedResponse>,
   pageSize: number = 20,

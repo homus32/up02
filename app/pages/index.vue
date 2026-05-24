@@ -25,7 +25,6 @@ const { visibleAnimes, displayLimit, canLoadMore, loadMoreWithFill } = useCatalo
   allAnimes, data, hasMore, loadMore,
 )
 
-// === User lists ===
 const { getStatus, isInList, addToList, removeFromList } = useUserLists()
 
 function handlePopupAddToList(animeId: string, status: UserListStatus) {
@@ -42,8 +41,7 @@ function handlePopupRemoveFromList(animeId: string) {
   removeFromList(animeId)
 }
 
-// === Hover popup (кастомный, вместо PrimeVue OverlayPanel) ===
-// usePopupHover() подключён выше
+// Кастомный hover popup (вместо PrimeVue OverlayPanel)
 </script>
 
 <template>
@@ -125,21 +123,18 @@ function handlePopupRemoveFromList(animeId: string) {
   padding-bottom: var(--space-12);
 }
 
-/* Grid */
 .catalog-page__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-5);
 }
 
-/* Load More */
 .catalog-page__load-more {
   margin-top: var(--space-8);
   display: flex;
   justify-content: center;
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .catalog-page__grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

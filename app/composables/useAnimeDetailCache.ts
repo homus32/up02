@@ -10,10 +10,7 @@ import type { Anime } from '~/types/anime'
  * Profile page has `ssr: false`, so the Map lives as long as the page is mounted.
  */
 export function useAnimeDetailCache() {
-  /** Resolved cache entries */
   const cache = new Map<string, Anime>()
-
-  /** Deduplication map for in-flight requests */
   const pending = new Map<string, Promise<Anime>>()
 
   /**
@@ -22,15 +19,12 @@ export function useAnimeDetailCache() {
    * share a single fetch promise.
    */
   function get(animeId: string): Promise<Anime> {
-    // Return cached result immediately
     const cached = cache.get(animeId)
     if (cached) return Promise.resolve(cached)
 
-    // Reuse in-flight request if one exists
     const inFlight = pending.get(animeId)
     if (inFlight) return inFlight
 
-    // Start a new fetch
     const promise = $fetch<Anime>(`/api/anime/${animeId}`)
       .then((anime) => {
         pending.delete(animeId)
@@ -54,7 +48,6 @@ export function useAnimeDetailCache() {
     return cache.get(animeId) ?? null
   }
 
-  /** Clear the entire cache (both resolved and pending). */
   function clear() {
     cache.clear()
     pending.clear()

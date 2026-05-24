@@ -21,7 +21,7 @@ const TARGET_ROWS = 5
  */
 export function useCatalogFillPage(
   allAnimes: Ref<Anime[]>,
-  data: Ref<PaginatedResponse | null>,
+  data: Ref<PaginatedResponse | null | undefined>,
   hasMore: Ref<boolean>,
   loadMore: () => Promise<void>,
 ) {

@@ -12,7 +12,6 @@ const _isInList = computed(() => isInList(props.animeId))
 const currentStatus = computed(() => getStatus(props.animeId))
 const currentRating = computed(() => getRating(props.animeId))
 
-// Poster URL for the list item
 const posterUrl = computed(() => {
   if (!props.anime.poster) return ''
   return props.anime.poster.mainUrl || props.anime.poster.originalUrl || ''
@@ -77,7 +76,6 @@ function handleRatingChange(score: number) {
   gap: var(--space-4);
 }
 
-/* ── Rating section ── */
 .anime-detail-actions__rating {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { UserListStatus } from '~/types/anime'
+import type { MenuItem } from 'primevue/menuitem'
 import { USER_LIST_STATUSES, USER_LIST_LABELS } from '~/types/anime'
 
 const props = defineProps<{
@@ -49,8 +50,8 @@ const buttonLabel = computed(() => {
 })
 
 // Dropdown menu items
-const menuItems = computed(() => {
-  const items = USER_LIST_STATUSES.map(status => ({
+const menuItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = USER_LIST_STATUSES.map(status => ({
     label: USER_LIST_LABELS[status],
     icon: statusIcon[status],
     command: () => {

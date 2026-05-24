@@ -73,7 +73,7 @@ describe('GET /api/anime/search', async () => {
     })
 
     expect(result.data).toHaveLength(5)
-    expect(result.data[0].id).toBe('6')
+    expect(result.data[0]!.id).toBe('6')
     expect(result.meta).toEqual({ total: 5, page: 2, limit: 5 })
   })
 
