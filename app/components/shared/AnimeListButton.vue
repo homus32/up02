@@ -74,6 +74,8 @@ const menuItems = computed(() => {
   return items
 })
 
+const isDefault = computed(() => !props.isInList || !props.listStatus)
+
 // Default action
 function handleDefaultAction() {
   if (props.isInList) return
@@ -87,8 +89,19 @@ function handleDefaultAction() {
     :icon="buttonIcon"
     :model="menuItems"
     :severity="buttonSeverity"
+    :outlined="isDefault"
+    :class="{ 'anime-list-button_default': isDefault }"
     :size="size === 'small' ? 'small' : undefined"
     fluid
     @click="handleDefaultAction"
   />
 </template>
+
+<style scoped>
+.anime-list-button_default {
+  --p-button-outlined-secondary-color: var(--accent-cyan, #00d4ff);
+  --p-button-outlined-secondary-border-color: var(--accent-cyan, #00d4ff);
+  --p-button-outlined-secondary-hover-background: color-mix(in srgb, var(--accent-cyan, #00d4ff) 10%, transparent);
+  --p-button-outlined-secondary-active-background: color-mix(in srgb, var(--accent-cyan, #00d4ff) 16%, transparent);
+}
+</style>
