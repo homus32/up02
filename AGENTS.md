@@ -29,7 +29,7 @@
 - **Vite**, **SSR** (режим по умолчанию)
 - **Vanilla CSS** — БЭМ (BEM), CSS custom properties, компонентные CSS-файлы
 - **PrimeVue 4** (Aura theme, компоненты с префиксом `P`)
-- **Inter** через `@nuxt/fonts` (font-display: swap)
+- **Inter** через Google Fonts (`app.head.link`, font-display: swap)
 
 ## Цель проекта
 
@@ -50,7 +50,7 @@ app/
     layout/        # Header.vue, Footer.vue
     catalog/       # AnimeCard.vue, AnimePreviewPopup.vue, PopupContent.vue, CatalogFilters.vue
     anime/         # AnimeDetailHero.vue, AnimeDetailLists.vue, PlayerPlaceholder.vue
-    profile/       # ProfileCard.vue, AnimeProfileCard.vue, ProfileTabEmpty.vue
+    profile/       # ProfileCard.vue, ProfileTabEmpty.vue, ProfileAnimeSection.vue
     shared/        # ErrorState.vue, EmptyState.vue, SkeletonCatalogGrid.vue, SkeletonAnimeDetail.vue
   composables/     # Vue composables
     useAnimeApi.ts
@@ -59,7 +59,9 @@ app/
     useHeaderSearch.ts
     useCatalogSearchState.ts
     useCatalogPagination.ts
+    useCatalogFillPage.ts
     usePopupHover.ts
+    useAnimeDetailCache.ts
   types/           # TypeScript-типы
     anime.ts
 public/            # статика (favicon и т.д.)

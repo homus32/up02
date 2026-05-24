@@ -18,7 +18,7 @@ app/
     layout/        # Header.vue, Footer.vue
     catalog/       # AnimeCard.vue, AnimePreviewPopup.vue, PopupContent.vue, CatalogFilters.vue
     anime/         # AnimeDetailHero.vue, AnimeDetailLists.vue, PlayerPlaceholder.vue
-    profile/       # ProfileCard.vue, AnimeProfileCard.vue, ProfileTabEmpty.vue
+    profile/       # ProfileCard.vue, ProfileTabEmpty.vue, ProfileAnimeSection.vue
     shared/        # ErrorState.vue, EmptyState.vue, SkeletonCatalogGrid.vue, SkeletonAnimeDetail.vue
   composables/     # Vue composables
     useAnimeApi.ts
@@ -29,6 +29,7 @@ app/
     useCatalogPagination.ts
     useCatalogFillPage.ts     # динамический расчёт колонок × рядов для заполнения экрана каталога
     usePopupHover.ts          # hover bridge для попапа (show 300ms, hide 150ms grace)
+    useAnimeDetailCache.ts    # in-memory кэш + dedup запросов к /api/anime/:id для popup на странице профиля
   types/
     anime.ts
 server/
@@ -64,8 +65,10 @@ docs/
 
 ---
 
-*Последнее обновление: 2026-05-22 — обновлена структура проекта: компоненты разложены по feature-based папкам, добавлены 6 новых компонентов (Header, Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail) и 3 новых composable (useHeaderSearch, useCatalogSearchState, useCatalogPagination).*
+*Последнее обновление: 2026-05-22 — обновлена структура проекта: компоненты разложены по feature-based папкам, добавлены 6 новых компонентов (Header, Footer, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail) и 3 новых composable (useHeaderSearch, useCatalogSearchState, useCatalogPagination). (AnimeProfileCard удалён — заменён PDataTable в ProfileAnimeSection).*
 *Последнее обновление: 2026-05-22 — GraphQL-запросы переведены на `graphql-tag` + `TypedDocumentNode` для type safety. Добавлен `graphql.config.ts` для WebStorm IDE.*
 *Последнее обновление: 2026-05-22 — PrimeVue-тема кастомизируется через `definePreset` (Aura base + overrides)*
 *Последнее обновление: 2026-05-23 — добавлены PopupContent.vue и usePopupHover.ts
-*Последнее обновление: 2026-05-23 — добавлен useCatalogFillPage.ts для динамического расчёта количества отображаемых карточек.*
+*Последнее обновление: 2026-05-25 — добавлен ProfileAnimeSection.vue (collapsible PDataTable + mobile cards).
+*Последнее обновление: 2026-05-23 — добавлен useCatalogFillPage.ts для динамического расчёта количества отображаемых карточек.
+*Последнее обновление: 2026-05-25 — добавлен useAnimeDetailCache.ts для кэширования запросов к API на странице профиля (dedup in-flight).*

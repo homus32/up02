@@ -252,7 +252,7 @@
 - `AnimeCard.vue`, `CatalogFilters.vue`, `AnimePreviewPopup.vue`, `PopupContent.vue` — из index.vue
 - `AnimeDetailHero.vue`, `PlayerPlaceholder.vue`, `AnimeDetailLists.vue` — из [id].vue
 - `SearchBar.vue` — поиск вынесен из app.vue в Header.vue
-- `ProfileCard.vue`, `AnimeProfileCard.vue`, `ProfileTabEmpty.vue` — из profile.vue
+- `ProfileCard.vue`, `ProfileTabEmpty.vue` — из profile.vue
 - `ErrorState.vue`, `EmptyState.vue`, `SkeletonCatalogGrid.vue`, `SkeletonAnimeDetail.vue` — shared-компоненты
 - `Header.vue`, `Footer.vue` — layout-компоненты
 
@@ -620,30 +620,30 @@ const isMobile = useMediaQuery('(max-width: 767px)')
 
 **Severity:** HIGH
 
-**Status:** ❌ PENDING
+**Status:** ✅ RESOLVED (2026-05-25)
 
 **Location:**
-- `app/pages/profile.vue:26-82` — шаблон страницы профиля
-- `app/pages/profile.vue:126-141` — мобильные стили
-- `app/components/profile/ProfileCard.vue:23-31` — stats (5 статусов)
-- `app/components/profile/AnimeProfileCard.vue:53-122` — карточка аниме в списке
+- `app/pages/profile.vue` — шаблон страницы профиля
+- `app/components/profile/ProfileCard.vue` — stats (5 статусов)
+- `app/components/profile/ProfileAnimeSection.vue` — collapsible секции с PDataTable / mobile cards
+- `app/components/profile/AnimeProfileCard.vue` — удалён (заменён PDataTable)
 
-**Impact:** На мобильных экранах профиль выглядит неаккуратно:
+**Impact (до фикса):** На мобильных экранах профиль выглядел неаккуратно:
+- **PTabView с 5 табами:** на экранах <480px вкладки переполняли контейнер без возможности скролла
+- **ProfileCard stats:** 5 блоков статистики через `flex-wrap` давали неровную сетку (2-3 блока в строке, последняя строка с одним)
+- **AnimeProfileCard:** карточка с постером, названием, статусом, рейтингом и кнопкой удаления была перегружена на узких экранах
 
-- **PTabView с 5 табами:** PrimeVue TabView не имеет пропа `scrollable`. На мобильных экранах (<480px) 5 вкладок (Запланировано, Смотрю, Просмотрено, Отложено, Брошено) переполняют контейнер — вкладки сжимаются до нечитаемого размера или переносятся. Нет horizontal scroll.
-- **ProfileCard stats:** 5 блоков статистики (`flex-wrap: wrap`) на мобильных выглядят как неровная сетка — по 2-3 блока в строке, последняя строка с одним блоком.
-- **AnimeProfileCard:** Карточка с постером (60×80px), названием, статусом, рейтингом и кнопкой удаления на узких экранах становится перегруженной.
-- ~~**Header (ProfileCard + кнопка выхода):** На мобильных заголовок складывается в колонку, кнопка выхода на всю ширину выглядит оторванной.~~ ✅ RESOLVED (2026-05-24) — кнопка вынесена в правый угол через `margin-left: auto`, заголовок остаётся в row-режиме с `flex-wrap: wrap`.
-- **Таб-хедеры на 480px:** `flex-direction: column` для tab-header — счётчик переносится под лейбл, высота табов увеличивается.
+**Root Cause:** Профиль не получал мобильной адаптации при создании. PTabView PrimeVue не поддерживает scrollable tabs. AnimeProfileCard не имел мобильной компактной версии. Stats ProfileCard использовали `flex-wrap` без адаптивных брейкпоинтов.
 
-**Root Cause:** Профиль не получал мобильной адаптации при создании. PTabView PrimeVue по умолчанию не поддерживает scrollable tabs. Stats ProfileCard использует `flex-wrap` без адаптивных брейкпоинтов. AnimeProfileCard не имеет мобильной компактной версии.
-
-**Fix:**
-- Добавить scrollable-режим для PTabView (кастомный CSS с `overflow-x: auto` + flex-shrink: 0 для вкладок)
-- Либо заменить PTabView на кастомные вкладки с horizontal scroll на мобильных
-- ProfileCard stats: переключиться на grid `repeat(auto-fill, minmax(70px, 1fr))` вместо flex-wrap
-- AnimeProfileCard: уменьшить постер до 48×64px на мобильных, убрать или перенести кнопку удаления
-- ~~Компактное расположение кнопки выхода на мобильных~~ ✅ RESOLVED (2026-05-24)
+**Fix Applied (2026-05-25):**
+1. **PTabView заменён** на 5 коллапсируемых `ProfileAnimeSection` — каждая секция сворачивается/разворачивается, заголовок кликабельный с шевроном и счётчиком
+2. **PDataTable (десктоп)** — 4 колонки: #, аниме (постер + ссылка + статусный badge), оценка, тип. Hover через `pt.bodyRow` с `onCardEnter`/`onCardLeave`
+3. **Mobile card list** — компактные карточки (48x64px постер, название, рейтинг, тип) с hover на попап через `onCardMouseEnter`
+4. **ProfileCard stats** — растягиваются через `flex: 1` на мобильных (широкие экраны: 5 блоков в 1 ряд, узкие: блоки переносятся и растягиваются на всю ширину строки)
+5. **AnimePreviewPopup** — добавлен на страницу профиля: при наведении на строку таблицы или мобильную карточку вызывается попап с деталями аниме
+6. **useAnimeDetailCache** — новый composable для кэширования запросов к `/api/anime/:id` в профиле (dedup in-flight, in-memory cache)
+7. **UserListItem** — расширен полями `kind`, `animeStatus`, `episodes`, `airedOnYear`; добавлена функция `normalizeItem` для обратной совместимости
+8. **useUserLists** — `addToList` принимает новые поля, `getByStatus` возвращает плоские объекты с `id`
 
 ---
 
@@ -1012,13 +1012,15 @@ const seasonOptions = computed(() => {
 
 **Severity:** LOW
 
-**Status:** ✅ RESOLVED (2026-05-23)
+**Status:** ✅ OBSOLETE (component deleted 2026-05-25)
 
 **Location:** `app/components/profile/AnimeProfileCard.vue:1-51`
 
 **Impact:** Во всех компонентах проекта сначала идёт `<script setup lang="ts">`, затем `<template>`. В `AnimeProfileCard.vue` порядок обратный. Не влияет на функциональность, но нарушает принятую конвенцию.
 
 **Fix Applied (2026-05-23):** `<script setup>` и `<template>` переставлены местами.
+
+**Note:** Компонент удалён. Заменён PDataTable (desktop) + inline mobile cards в ProfileAnimeSection.vue.
 
 ---
 
@@ -1099,7 +1101,7 @@ const seasonOptions = computed(() => {
 
 ### Общая картина
 
-Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переписан на кастомный `<div>` вместо PrimeVue OverlayPanel (HI-2/HI-13). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Исправлено дублирование header в профиле (HI-16) — удалён `:header` prop, оставлен только `#header` slot. Английский текст переведён на русский (HI-17). Кнопка выхода в профиле вынесена в правый угол (HI-19 — частично). Мобильная вёрстка фильтров (HI-18) — исправлена. Остаются: скелетоны не синхронизированы с layout (HI-14, HI-15), мобильная вёрстка профиля (HI-19 — требуется доработка вкладок и карточек).
+Проект находится на стадии **рабочего прототипа**. SSR-рендеринг починен (CI-1, HI-6 — установлен `@vueuse/nuxt`, убран явный `localStorage` из `useStorage`). PrimeVue-тема Aura корректно загружена (HI-7, HI-8 — full fix: clamp-типографика, contrast, breakpoints, definePreset). Тёмная тема Aura включена через `definePreset`, `.dark-mode` класс устанавливается синхронно до первого paint. Шрифт Inter подключён через Google Fonts (`app.head.link`) (HI-10). Декомпозиция монолитов завершена — все 17 компонентов вынесены (HI-4). Попап переписан на кастомный `<div>` вместо PrimeVue OverlayPanel (HI-2/HI-13). Dependencies очищены (MI-5, MI-6). Динамический расчёт количества карточек реализован: `useCatalogFillPage` вычисляет кол-во колонок и рядов под конкретный экран (HI-9). Исправлено дублирование header в профиле (HI-16) — удалён `:header` prop, оставлен только `#header` slot. Английский текст переведён на русский (HI-17). Мобильная вёрстка фильтров (HI-18) — исправлена. Мобильная вёрстка профиля (HI-19) — PTabView заменён на коллапсируемые секции с PDataTable (десктоп) и card list (мобильные); добавлен AnimePreviewPopup с hover-интеграцией. Остаются: скелетоны не синхронизированы с layout (HI-14, HI-15).
 
 ### Ключевые архитектурные разрывы
 
@@ -1144,7 +1146,7 @@ const seasonOptions = computed(() => {
 18. ~~**HIGH** — Убрать дублирование `:header` prop в `PTabPanel` на profile (HI-16)~~ ✅ **Готово**
 19. ~~**HIGH** — Перевести английский текст на русский (HI-17)~~ ✅ **Готово**
 20. ~~**HIGH** — Мобильная верстка фильтров на главной (HI-18)~~ ✅ **Готово**
-21. **HIGH** — Мобильная верстка профиля (HI-19) ❌ **PENDING** (частично: кнопка выхода в углу — готово, вкладки и карточки — pending)
+21. ~~**HIGH** — Мобильная верстка профиля (HI-19)~~ ✅ **Готово** — PTabView заменён на коллапсируемые секции с PDataTable/card list + AnimePreviewPopup
 
 **Phase 4 — Quality (долг):**
 22. **MEDIUM** — Архитектурный долг (MI-1–14) — частично выполнено (MI-5, MI-6, MI-9, MI-13, MI-14)
@@ -1171,4 +1173,5 @@ const seasonOptions = computed(() => {
 *Последнее обновление: 2026-05-23 — добавлены HI-18 (мобильные фильтры) и HI-19 (мобильный профиль)*
 *Последнее обновление: 2026-05-23 — HI-2/HI-13 resolved: кастомный popup (position: fixed) + usePopupHover вместо POverlayPanel/PDialog
 *Последнее обновление: 2026-05-24 — HI-18 resolved (iterations 1-3): мобильная верстка фильтров (CatalogFilters) — выравнивание по левому краю + Сезон/Сортировка на одной строке + CSS-only show/hide для PSelect/PSelectButton без SSR-флеша*
-*Последнее обновление: 2026-05-24 — HI-16/HI-17 resolved: tab header duplication fix (удалён `:header` prop), перевод английского текста на русский. HI-19 частично: кнопка выхода в правом углу через `margin-left: auto`. Добавлен `clearAll()` в useUserLists, logout очищает списки и рейтинги.*
+*Последнее обновление: 2026-05-24 — HI-16/HI-17 resolved: tab header duplication fix (удалён `:header` prop), перевод английского текста на русский. HI-19 частично: кнопка выхода в правом углу через `margin-left: auto`. Добавлен `clearAll()` в useUserLists, logout очищает списки и рейтинги.
+*Последнее обновление: 2026-05-25 — HI-19 resolved: PTabView заменён на 5 коллапсируемых ProfileAnimeSection с PDataTable (десктоп) + mobile cards, AnimePreviewPopup с hover-интеграцией, useAnimeDetailCache для кэширования, normalizeItem для обратной совместимости UserListItem.**

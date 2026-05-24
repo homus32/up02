@@ -45,6 +45,7 @@
 - [x] Фаза 3 Fonts (Inter через Google Fonts `app.head.link`, font-display: swap)
 - [x] Фаза 4 Dependencies (nuxt-mcp-dev, @primevue/mcp → devDependencies)
 - [x] Фаза 4 Сезоны (динамическая генерация в CatalogFilters)
+- [x] Профиль рефакторинг: PTabView → коллапсируемые секции (ProfileAnimeSection), PDataTable (десктоп) + карточки (мобильные), AnimePreviewPopup через hover, useAnimeDetailCache, normalizeItem для обратной совместимости UserListItem
 
 ---
 

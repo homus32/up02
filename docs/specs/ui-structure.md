@@ -7,7 +7,7 @@
 | 1 | **Каталог** | `/` | Сетка карточек аниме, поиск, фильтры (тип/статус/сезон/сорт.), кнопка «Загрузить ещё», **динамический расчёт количества карточек под экран**, **кастомный hover popup** | PSelectButton, PSelect, PButton, PTag, PChip |
 | 2 | **Страница тайтла** | `/anime/[id]` | Постер, информация, плеер-заглушка, добавление в список, оценка | PTag, PRating, PChip, PButton, PSelectButton, PImage |
 | 3 | **Вход** | `/login` | Псевдо-форма логина (любое имя → профиль) | PInputText, PButton |
-| 4 | **Профиль** | `/profile` | Имя пользователя, 5 списков (planned/watching/completed/on_hold/dropped) с карточками, удаление | PTabView, PTabPanel, PButton, PTag |
+| 4 | **Профиль** | `/profile` | Имя пользователя, 5 коллапсируемых секций списков (planned/watching/completed/on_hold/dropped) с PDataTable (десктоп) / карточками (мобильные), интеграция с AnimePreviewPopup через hover | PButton, PTag, PDataTable, PColumn |
 
 ## Компоненты
 
@@ -17,14 +17,14 @@
 | **Footer** | `app/components/layout/Footer.vue` | Подвал с копирайтом | Все страницы |
 | **AnimeCard** | `app/components/catalog/AnimeCard.vue` | Карточка аниме (постер, kind-бейдж, иконка статуса просмотра, название, год) | Каталог |
 | **CatalogFilters** | `app/components/catalog/CatalogFilters.vue` | Фильтры (тип, статус, сезон, сортировка), v-model | Каталог |
-| **AnimePreviewPopup** | `app/components/catalog/AnimePreviewPopup.vue` | Всплывающий попап с деталями (кастомный `<div>` с `position: fixed`, десктоп bottom sheet / мобильные bottom sheet) | Каталог |
+| **AnimePreviewPopup** | `app/components/catalog/AnimePreviewPopup.vue` | Всплывающий попап с деталями (кастомный `<div>` с `position: fixed`, десктоп bottom sheet / мобильные bottom sheet) | Каталог, Профиль |
 | **PopupContent** | `app/components/catalog/PopupContent.vue` | Содержимое попапа (извлечено из AnimePreviewPopup для устранения дублирования Desktop/Mobile) | AnimePreviewPopup |
 | **AnimeDetailHero** | `app/components/anime/AnimeDetailHero.vue` | Постер, заголовок, метаданные, жанры, описание (v-html санитизация) | Страница тайтла |
 | **PlayerPlaceholder** | `app/components/anime/PlayerPlaceholder.vue` | Плеер-заглушка (иконка + «Видео временно недоступно») | Страница тайтла |
 | **AnimeDetailLists** | `app/components/anime/AnimeDetailLists.vue` | Добавление в список / оценка (ClientOnly, useUserLists) | Страница тайтла |
 | **ProfileCard** | `app/components/profile/ProfileCard.vue` | Аватар, имя пользователя, статистика по спискам | Профиль |
-| **AnimeProfileCard** | `app/components/profile/AnimeProfileCard.vue` | Карточка аниме в списке (постер, название, статус, оценка, удаление) | Профиль |
 | **ProfileTabEmpty** | `app/components/profile/ProfileTabEmpty.vue` | Пустое состояние вкладки списка | Профиль |
+| **ProfileAnimeSection** | `app/components/profile/ProfileAnimeSection.vue` | Collapsible-секция списка аниме: PDataTable (десктоп, 5 колонок) / карточки (мобильные), hover-попап через pt.bodyRow + onCardMouseEnter | Профиль |
 | **ErrorState** | `app/components/shared/ErrorState.vue` | Состояние ошибки с иконкой, сообщением и кнопкой повтора | Каталог, Страница тайтла |
 | **EmptyState** | `app/components/shared/EmptyState.vue` | Пустое состояние с иконкой, сообщением и действием | Каталог |
 | **SkeletonCatalogGrid** | `app/components/shared/SkeletonCatalogGrid.vue` | Скелетон-загрузчик сетки карточек (проп `count`, по умолчанию 20) | Каталог |
@@ -36,6 +36,7 @@
 |------------|------|------------|
 | **usePopupHover** | `app/composables/usePopupHover.ts` | Hover bridge для превью-попапа. Управляет задержкой показа (300ms), grace-периодом скрытия (150ms), захватывает `getBoundingClientRect` карточки для позиционирования. CSR-only. |
 | **useCatalogFillPage** | `app/composables/useCatalogFillPage.ts` | Динамический расчёт количества карточек для заполнения экрана каталога. Вычисляет колонки (по ширине контейнера) и ряды (по высоте viewport) на клиенте после монтирования. SSR-safe с дефолтом 12 карточек. |
+| **useAnimeDetailCache** | `app/composables/useAnimeDetailCache.ts` | In-memory кэш деталей аниме для popup на странице профиля. Deduplicates in-flight запросы. `get(id)` возвращает Promise, `getCached(id)` — синхронно. Живёт пока смонтирована страница профиля (`ssr: false`). |
 
 ## Макет (Layout)
 
@@ -70,9 +71,12 @@
 
 ---
 
-*Последнее обновление: 2026-05-23*
+*Последнее обновление: 2026-05-25*
 
-*Обновлено после рефакторинга: добавлены Header/Footer, AnimeProfileCard, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail; обновлены пути компонентов (feature-based папки).*
+*Обновлено после рефакторинга: добавлены Header/Footer, ProfileTabEmpty, ErrorState, EmptyState, SkeletonCatalogGrid, SkeletonAnimeDetail; обновлены пути компонентов (feature-based папки). AnimeProfileCard удалён — заменён PDataTable в ProfileAnimeSection.*
+*Обновлено 2026-05-25: добавлен ProfileAnimeSection.vue — collapsible-секция с PDataTable (десктоп) / карточками (мобильные), интеграция с AnimePreviewPopup через hover на строках таблицы.
+*Обновлено 2026-05-25: добавлен useAnimeDetailCache composable для кэширования запросов к API на странице профиля.
+*Обновлено 2026-05-25: Profile страница — PTabView заменён на 5 ProfileAnimeSection; добавлен AnimePreviewPopup с hover-интеграцией.*
 *Обновлено 2026-05-23: PrimeVue-компонентам добавлен префикс `P` (настройка `primevue.components.prefix` в `nuxt.config.ts`).*
 *Обновлено 2026-05-23: добавлен `useCatalogFillPage` для динамического расчёта количества отображаемых карточек.*
 *Обновлено 2026-05-23: AnimeCard — убраны рейтинг, статус аниме, кнопка «В список»/«Удалить». Добавлены: год, иконка статуса просмотра на постере, название в одну строку с троеточием.*
