@@ -1,10 +1,41 @@
 <script setup lang="ts">
-import { USER_LIST_STATUSES, USER_LIST_LABELS } from '~/types/anime'
-import type { UserListStatus } from '~/types/anime'
+import { USER_LIST_STATUSES } from '~/types/anime'
+import type { UserListStatus, Anime } from '~/types/anime'
 
 const router = useRouter()
 const { isLoggedIn, username, logout } = useAuth()
-const { getByStatus, removeFromList, getListStats, clearAll } = useUserLists()
+const {
+  getByStatus, removeFromList, updateStatus,
+  getListStats, isInList, getStatus, clearAll,
+} = useUserLists()
+const {
+  onCardEnter: onCardEnterOriginal, onCardLeave,
+  onPopupEnter, onPopupLeave,
+  isVisible, selectedAnime, popupRect,
+} = usePopupHover()
+const animeCache = useAnimeDetailCache()
+
+/** Full anime data fetched via API — replaces selectedAnime once resolved */
+const fullAnime = ref<Anime | null>(null)
+/** Anchor point: right edge of anime name text */
+const popupAnchor = ref<{ x: number; y: number } | null>(null)
+
+/** Popup shows full API data when available, otherwise minimal row data */
+const popupAnime = computed(() => fullAnime.value || selectedAnime.value)
+
+// Override popupRect when popup becomes visible or switches to another anime
+// Используем selectedAnime вместо isVisible — при быстром переключении между
+// рядами isVisible уже true и watcher не срабатывает.
+watch([isVisible, selectedAnime], () => {
+  if (isVisible.value && selectedAnime.value && popupAnchor.value) {
+    const { x, y } = popupAnchor.value
+    popupRect.value = new DOMRect(x, y, 0, 0)
+  }
+  if (!isVisible.value) {
+    fullAnime.value = null
+    popupAnchor.value = null
+  }
+})
 
 onMounted(() => {
   if (!isLoggedIn.value) router.replace('/login')
@@ -19,8 +50,26 @@ function handleLogout() {
   router.push('/login')
 }
 
-function handleRemove(animeId: string) {
+function handleRemoveFromList(animeId: string) {
   removeFromList(animeId)
+}
+
+function handleAddToList(animeId: string, status: UserListStatus) {
+  updateStatus(animeId, status)
+}
+
+async function handleCardEnter(anime: Anime, event: MouseEvent) {
+  fullAnime.value = null
+  // Находим правую границу названия аниме — попап появится справа от него
+  const cell = event.currentTarget as HTMLElement | null
+  const nameEl = cell?.querySelector('.profile-section__anime-name')
+  const nameRight = nameEl?.getBoundingClientRect().right ?? event.clientX
+  popupAnchor.value = { x: nameRight, y: event.clientY }
+  onCardEnterOriginal(anime, event)
+  // Fetch full data for rich popup (genres, description, episodes)
+  animeCache.get(anime.id).then(data => {
+    fullAnime.value = data
+  }).catch(() => {})
 }
 </script>
 
@@ -46,41 +95,30 @@ function handleRemove(animeId: string) {
     </div>
 
     <div class="profile-page__content container">
-      <PTabView>
-        <PTabPanel
+      <div class="profile-page__sections">
+        <ProfileAnimeSection
           v-for="status in USER_LIST_STATUSES"
           :key="status"
-          :value="status"
-        >
-          <template #header>
-            <span class="profile-page__tab-header">
-              <span class="profile-page__tab-label">{{ USER_LIST_LABELS[status] }}</span>
-              <span
-                v-if="stats[status] > 0"
-                class="profile-page__tab-count"
-              >
-                {{ stats[status] }}
-              </span>
-            </span>
-          </template>
-
-          <div
-            v-if="getByStatus(status).length > 0"
-            class="profile-page__list"
-          >
-            <AnimeProfileCard
-              v-for="[animeId, item] in getByStatus(status)"
-              :key="animeId"
-              :anime-id="animeId"
-              :item="item"
-              @remove="handleRemove"
-            />
-          </div>
-
-          <ProfileTabEmpty v-else />
-        </PTabPanel>
-      </PTabView>
+          :status="status"
+          :items="getByStatus(status)"
+          :total="stats[status] ?? 0"
+          :default-open="true"
+          :hover-props="{ onCardEnter: handleCardEnter, onCardLeave }"
+        />
+      </div>
     </div>
+
+    <AnimePreviewPopup
+      v-if="isVisible && popupAnime"
+      :anime="popupAnime"
+      :is-in-list="!!selectedAnime && isInList(selectedAnime.id)"
+      :list-status="selectedAnime ? getStatus(selectedAnime.id) : null"
+      :position="popupRect"
+      @mouseenter="onPopupEnter"
+      @mouseleave="onPopupLeave"
+      @add-to-list="handleAddToList"
+      @remove-from-list="handleRemoveFromList"
+    />
   </div>
 </template>
 
@@ -100,29 +138,10 @@ function handleRemove(animeId: string) {
   padding-top: var(--space-8);
 }
 
-.profile-page__tab-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.profile-page__tab-label {
-  font-size: var(--text-sm);
-}
-
-.profile-page__tab-count {
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  padding: 2px 6px;
-  border-radius: 10px;
-}
-
-.profile-page__list {
+.profile-page__sections {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-6);
 }
 
 /* Mobile */
@@ -131,15 +150,6 @@ function handleRemove(animeId: string) {
     flex-wrap: wrap;
     gap: var(--space-4);
     padding: var(--space-6);
-  }
-
-}
-
-@media (max-width: 480px) {
-  .profile-page__tab-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-1);
   }
 }
 </style>
