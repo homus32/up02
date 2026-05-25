@@ -32,7 +32,7 @@
 ## Acceptance Criteria
 
 - [x] Задание 1: описание проекта — `docs/guides/concept.md`
-- [ ] Задание 2: use-case диаграмма в виде изображения
+- [x] Задание 2: use-case диаграмма — `docs/excalidraw/use-case-diagram.excalidraw` (открыть в Excalidraw.com)
 - [x] Задание 3: 4 страницы, PrimeVue + БЭМ, адаптивность, клиентская логика (localStorage), ссылка на репозиторий
 
 ## Рефакторинг (Фаза 1–4)
