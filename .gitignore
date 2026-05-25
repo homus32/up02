@@ -29,5 +29,3 @@ logs
 .env
 .env.*
 !.env.example
-# Added to .gitignore
-*.png
